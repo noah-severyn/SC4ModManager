@@ -17,6 +17,8 @@ using System.Windows.Shapes;
 using csDBPF;
 using csDBPF.Properties;
 using System.Diagnostics;
+using CsvHelper;
+using System.Globalization;
 
 namespace SC4ModManager {
 	/// <summary>
@@ -38,6 +40,7 @@ namespace SC4ModManager {
 				}
 			}
 
+			Dictionary<uint, Rep13IIDs> listOfRep13IIDs = new Dictionary<uint, Rep13IIDs>();
 
 			foreach (string filePath in dbpfFiles) {
 				DBPFFile dbpf = new DBPFFile(filePath);
@@ -48,19 +51,61 @@ namespace SC4ModManager {
 					if (entry.TGI.MatchesKnownTGI(DBPFTGI.EXEMPLAR)) {
 						Dictionary<int, DBPFProperty> properties = (Dictionary<int, DBPFProperty>) entry.DecodeEntry();
 
-						List<uint> listOfRep13IIDs = new List<uint>();
-						foreach (DBPFProperty property in properties.Values) {
-							if (property.ID == 0x88edc903) {
-								//XMLProperties.AllProperties.TryGetValue(0x88EDC903, out XMLExemplarProperty xmlProp);
-								Array vals = Array.CreateInstance(property.DataType.PrimitiveDataType, property.NumberOfReps);
+						//Check the exemplar type and skip to next exemplar file if not a match
+						properties.TryGetValue(0, out DBPFProperty exemplarType); //The first property is always Exemplar Type (0x00000010)
+						Array exemplarTypeVals = Array.CreateInstance(exemplarType.DataType.PrimitiveDataType, exemplarType.NumberOfReps); //Create new array to hold the values
+						exemplarTypeVals = (Array) exemplarType.DecodeValues(); //Set the values from the decoded property
+						uint exemplarTypeValue = (uint) exemplarTypeVals.GetValue(0); //Exemplar type can only hold one value, so grab the first one.
+						if (!(exemplarTypeValue == (int) DBPFProperty.ExemplarTypes.LotConfiguration)) {
+							continue;
+						}
 
+						//We know this exemplar is type 0x10 (Lot Configuration) so continue on to snag the LotConfigPropertyLotObjectData properties - first one ix 0x88edc900 and can continue on for max 1028 repetitions total
+						uint idx = 0;
+						
+						foreach (DBPFProperty property in properties.Values) {
+							//LotConfigPropertyLotObjectData must be between 0x88edc900 and 0x88edce00
+							if (property.ID >= 0x88edc900 && property.ID <= 0x88edce00) {
+								Array lcplodVals = Array.CreateInstance(property.DataType.PrimitiveDataType, property.NumberOfReps);
+								lcplodVals = (Array) property.DecodeValues();
 								//Want only rep 1 = 0x0 (building) or 0x1 (prop) or 0x2 (texture) or 0x4 (flora)
-								Trace.WriteLine(vals.GetValue(0));
+								uint rep0 = (uint) lcplodVals.GetValue(0);
+
+								if (rep0 == (int) DBPFProperty.LotConfigPropertyLotObjectTypes.Building || rep0 == (int) DBPFProperty.LotConfigPropertyLotObjectTypes.Prop ||
+									rep0 == (int) DBPFProperty.LotConfigPropertyLotObjectTypes.Texture || rep0 == (int) DBPFProperty.LotConfigPropertyLotObjectTypes.Flora) {
+									listOfRep13IIDs.Add(idx, new Rep13IIDs { FilePath = filePath, Rep0IID = rep0, Rep13IID = (uint) lcplodVals.GetValue(12) });
+									idx++;
+								}
 							}
 						}
 					}
 				}
+			}
 
+			WriteCSV(listOfRep13IIDs);
+		}
+
+
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="dict"></param>
+		/// <see cref="https://joshclose.github.io/CsvHelper/getting-started/#writing-a-csv-file"/>
+		private void WriteCSV(Dictionary<uint,Rep13IIDs> dict) {
+			using (var writer = new StreamWriter("C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\rep13IIDs.csv"))
+			using (var csv = new CsvWriter(writer,CultureInfo.InvariantCulture)) {
+				csv.WriteRecords(dict);
+			}
+		}
+
+		private class Rep13IIDs {
+			public string FilePath { get; set; }
+			public uint Rep0IID { get; set; }
+			public uint Rep13IID { get; set; }
+
+			public override string ToString() {
+				return $"{FilePath}, {Rep0IID}, 0x{DBPFUtil.UIntToHexString(Rep13IID)}";
 			}
 		}
 	}
