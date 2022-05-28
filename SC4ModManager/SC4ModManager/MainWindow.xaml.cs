@@ -25,14 +25,15 @@ namespace SC4ModManager {
 	/// Interaction logic for MainWindow.xaml
 	/// </summary>
 	public partial class MainWindow : Window {
-		private string pluginsFolderDocs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\SimCity 4\\Plugins";
-		private string folderPath = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\B62";
-		private string folderPath2 = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\B62\\B62-Albertsons 60's Retro v2.0";
+		private readonly string pluginsFolderDocs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\SimCity 4\\Plugins";
+		private readonly string folderPath = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\B62";
+		private readonly string folderPath2 = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\B62\\B62-Albertsons 60's Retro v2.0";
 
 
 		public MainWindow() {
 			InitializeComponent();
-			string[] files = Directory.GetFiles(folderPath2, "*", SearchOption.TopDirectoryOnly);
+			//string[] files = Directory.GetFiles(folderPath, "*", SearchOption.TopDirectoryOnly);
+			string[] files = Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories);
 			List<string> dbpfFiles = new List<string>();
 			foreach (string file in files) {
 				if (DBPFUtil.IsFileDBPF(file)) {
@@ -41,18 +42,21 @@ namespace SC4ModManager {
 			}
 
 			Dictionary<uint, Rep13IIDs> listOfRep13IIDs = new Dictionary<uint, Rep13IIDs>();
+			uint idx = 0;
 
+			//Loop through each file
 			foreach (string filePath in dbpfFiles) {
 				DBPFFile dbpf = new DBPFFile(filePath);
-				OrderedDictionary entries = dbpf.ListOfEntries;
-
-				foreach (DBPFEntry entry in entries.Values) {
-					//Looking for exemplars subfiles that have type 0x010 (LotConfiguration), and then all properties 0x88EDC903 (LotConfigPropertyLotObjectData)
+				OrderedDictionary listOfEntries = dbpf.ListOfEntries;
+				
+				//Loop through each subfile
+				foreach (DBPFEntry entry in listOfEntries.Values) {
 					if (entry.TGI.MatchesKnownTGI(DBPFTGI.EXEMPLAR)) {
-						Dictionary<int, DBPFProperty> properties = (Dictionary<int, DBPFProperty>) entry.DecodeEntry();
+						//Initialize the list of properties for this entry
+						Dictionary<int, DBPFProperty> listOfProperties = (Dictionary<int, DBPFProperty>) entry.DecodeEntry();
 
 						//Check the exemplar type and skip to next exemplar file if not a match
-						properties.TryGetValue(0, out DBPFProperty exemplarType); //The first property is always Exemplar Type (0x00000010)
+						DBPFProperty exemplarType = entry.GetProperty(0x00000010,listOfProperties);
 						Array exemplarTypeVals = Array.CreateInstance(exemplarType.DataType.PrimitiveDataType, exemplarType.NumberOfReps); //Create new array to hold the values
 						exemplarTypeVals = (Array) exemplarType.DecodeValues(); //Set the values from the decoded property
 						uint exemplarTypeValue = (uint) exemplarTypeVals.GetValue(0); //Exemplar type can only hold one value, so grab the first one.
@@ -61,9 +65,7 @@ namespace SC4ModManager {
 						}
 
 						//We know this exemplar is type 0x10 (Lot Configuration) so continue on to snag the LotConfigPropertyLotObjectData properties - first one ix 0x88edc900 and can continue on for max 1028 repetitions total
-						uint idx = 0;
-						
-						foreach (DBPFProperty property in properties.Values) {
+						foreach (DBPFProperty property in listOfProperties.Values) {
 							//LotConfigPropertyLotObjectData must be between 0x88edc900 and 0x88edce00
 							if (property.ID >= 0x88edc900 && property.ID <= 0x88edce00) {
 								Array lcplodVals = Array.CreateInstance(property.DataType.PrimitiveDataType, property.NumberOfReps);
