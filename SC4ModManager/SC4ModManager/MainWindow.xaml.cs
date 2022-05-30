@@ -32,8 +32,8 @@ namespace SC4ModManager {
 
 		public MainWindow() {
 			InitializeComponent();
-			//string[] files = Directory.GetFiles(folderPath, "*", SearchOption.TopDirectoryOnly);
-			string[] files = Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories);
+			string[] files = Directory.GetFiles(folderPath2, "*", SearchOption.TopDirectoryOnly);
+			//string[] files = Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories);
 			List<string> dbpfFiles = new List<string>();
 			foreach (string file in files) {
 				if (DBPFUtil.IsFileDBPF(file)) {
@@ -41,6 +41,28 @@ namespace SC4ModManager {
 				}
 			}
 
+
+			ScanRep13IIDs(dbpfFiles);
+			
+		}
+
+
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="dict"></param>
+		/// <see cref="https://joshclose.github.io/CsvHelper/getting-started/#writing-a-csv-file"/>
+		private void WriteCSV(Dictionary<uint, Rep13IIDs> dict, string filePath) {
+			using (var writer = new StreamWriter(filePath))
+			using (var csv = new CsvWriter(writer,CultureInfo.InvariantCulture)) {
+				csv.WriteRecords(dict);
+			}
+		}
+
+
+
+		private void ScanRep13IIDs(List<string> dbpfFiles) {
 			Dictionary<uint, Rep13IIDs> listOfRep13IIDs = new Dictionary<uint, Rep13IIDs>();
 			uint idx = 0;
 
@@ -48,24 +70,21 @@ namespace SC4ModManager {
 			foreach (string filePath in dbpfFiles) {
 				DBPFFile dbpf = new DBPFFile(filePath);
 				OrderedDictionary listOfEntries = dbpf.ListOfEntries;
-				
+
 				//Loop through each subfile
 				foreach (DBPFEntry entry in listOfEntries.Values) {
 					if (entry.TGI.MatchesKnownTGI(DBPFTGI.EXEMPLAR)) {
 						//Initialize the list of properties for this entry
-						Dictionary<int, DBPFProperty> listOfProperties = (Dictionary<int, DBPFProperty>) entry.DecodeEntry();
+						entry.DecodeEntry();
 
 						//Check the exemplar type and skip to next exemplar file if not a match
-						DBPFProperty exemplarType = entry.GetProperty(0x00000010,listOfProperties);
-						Array exemplarTypeVals = Array.CreateInstance(exemplarType.DataType.PrimitiveDataType, exemplarType.NumberOfReps); //Create new array to hold the values
-						exemplarTypeVals = (Array) exemplarType.DecodeValues(); //Set the values from the decoded property
-						uint exemplarTypeValue = (uint) exemplarTypeVals.GetValue(0); //Exemplar type can only hold one value, so grab the first one.
-						if (!(exemplarTypeValue == (int) DBPFProperty.ExemplarTypes.LotConfiguration)) {
+						int exType = entry.GetExemplarType();
+						if (!(exType == (int) DBPFProperty.ExemplarTypes.LotConfiguration)) {
 							continue;
 						}
 
 						//We know this exemplar is type 0x10 (Lot Configuration) so continue on to snag the LotConfigPropertyLotObjectData properties - first one ix 0x88edc900 and can continue on for max 1028 repetitions total
-						foreach (DBPFProperty property in listOfProperties.Values) {
+						foreach (DBPFProperty property in entry.ListOfProperties.Values) {
 							//LotConfigPropertyLotObjectData must be between 0x88edc900 and 0x88edce00
 							if (property.ID >= 0x88edc900 && property.ID <= 0x88edce00) {
 								Array lcplodVals = Array.CreateInstance(property.DataType.PrimitiveDataType, property.NumberOfReps);
@@ -84,21 +103,7 @@ namespace SC4ModManager {
 				}
 			}
 
-			WriteCSV(listOfRep13IIDs);
-		}
-
-
-
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="dict"></param>
-		/// <see cref="https://joshclose.github.io/CsvHelper/getting-started/#writing-a-csv-file"/>
-		private void WriteCSV(Dictionary<uint,Rep13IIDs> dict) {
-			using (var writer = new StreamWriter("C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\rep13IIDs.csv"))
-			using (var csv = new CsvWriter(writer,CultureInfo.InvariantCulture)) {
-				csv.WriteRecords(dict);
-			}
+			WriteCSV(listOfRep13IIDs, "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\rep13IIDs.csv");
 		}
 
 		private class Rep13IIDs {
