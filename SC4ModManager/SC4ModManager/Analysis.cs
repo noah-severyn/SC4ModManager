@@ -98,18 +98,22 @@ namespace SC4ModManager {
 				DBPFFile dbpf = new DBPFFile(filePath);
 				foreach (DBPFTGI tgi in dbpf.ListOfTGIs.Values) {
 
-					//If TGI is Base/Overlay Texture, look at the least significant 4 bits and only add if it is 0, 5, or A (And the Instance by 0b1111 (0xF) and check the modulus result)
-					if (tgi.MatchesKnownTGI(DBPFTGI.FSH_BASE_OVERLAY) && ((tgi.Instance & 0xF) % 5) != 0) {
-						continue;
-					}
-					//Do not index S3D either
-					if (tgi.MatchesKnownTGI(DBPFTGI.S3D)) {
-						continue;
+					//Add all Base/Overlay textures. Look at the least significant 4 bits and only add if it is 0, 5, or A: And the Instance by 0b1111 (0xF) and check the modulus result.
+					if (tgi.MatchesKnownTGI(DBPFTGI.FSH_BASE_OVERLAY) && ((tgi.Instance & 0xF) % 5) == 0) {
+						allTGIs.Add(idx, new TGIs { FilePath = filePath, TGI = tgi.ToString() });
+						idx++;
 					}
 
-					//for now, only do exemplar
-					if (tgi.MatchesKnownTGI(DBPFTGI.EXEMPLAR)) {
+					//Add all Exemplars
+					else if (tgi.MatchesKnownTGI(DBPFTGI.EXEMPLAR)) {
 						allTGIs.Add(idx, new TGIs { FilePath = filePath, TGI = tgi.ToString() });
+						idx++;
+					}
+
+					//Add all Cohorts. Note the Building/prop family of the Cohort is always 0x10000000 less than the Cohort's Index.
+					else if (tgi.MatchesKnownTGI(DBPFTGI.COHORT)) {
+						DBPFTGI family = new DBPFTGI((uint) tgi.Type, (uint) tgi.Group, (uint) (tgi.Instance - 0x10000000));
+						allTGIs.Add(idx, new TGIs { FilePath = filePath, TGI = family.ToString() });
 						idx++;
 					}
 					

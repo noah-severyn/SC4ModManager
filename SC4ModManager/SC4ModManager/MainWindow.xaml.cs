@@ -25,16 +25,18 @@ namespace SC4ModManager {
 	/// </summary>
 	public partial class MainWindow : Window {
 		private readonly string pluginsFolderDocs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\SimCity 4\\Plugins";
-		private readonly string folderPath = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\B62";
+		private readonly string B62_Files = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\B62";
 		private readonly string folderPath2 = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\B62\\B62-Albertsons 60's Retro v2.0";
-		private readonly string dependencyPath = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps";
-		private readonly string dependencyPath2 = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\!Deps 2";
+		private readonly string SC4_Deps = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps";
+		private readonly string Deps = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\!Deps";
+		private readonly string Deps2 = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\!Deps 2";
+		private readonly string STEX_Sample = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\STEX Entries Sample - 2021.10.22\\Files";
+		private readonly string GAME_DIR = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SimCity 4 Deluxe";
 
 
 		public MainWindow() {
 			InitializeComponent();
-			string[] files = Directory.GetFiles(dependencyPath, "*", SearchOption.TopDirectoryOnly);
-			//string[] files = Directory.GetFiles(folderPath, "*", SearchOption.AllDirectories);
+			string[] files = Directory.GetFiles(GAME_DIR, "*", SearchOption.TopDirectoryOnly);
 			List<string> dbpfFiles = new List<string>();
 			foreach (string file in files) {
 				if (DBPFUtil.IsFileDBPF(file)) {
