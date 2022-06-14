@@ -11,8 +11,7 @@ using csDBPF.Properties;
 namespace SC4ModManager {
 	public static class Analysis {
 		private const string Rep13sCSVpath = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\rep13IIDs.csv";
-		private const string TGIsCSVpath = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\allTGIs.csv";
-
+		#region Rep13IIDs
 		/// <summary>
 		/// Generates a CSV file of all props, textures, buildings, and flora used on lots (Rep 13 of the LotConfigPropertyLotObjectData properties).
 		/// </summary>
@@ -84,8 +83,10 @@ namespace SC4ModManager {
 				csv.WriteRecords(dict);
 			}
 		}
+		#endregion Rep13IIDs
 
-
+		private const string TGIsCSVpath = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\allTGIs.csv";
+		#region GetTGIs
 		/// <summary>
 		/// Generates a CSV file of all TGIs.
 		/// </summary>
@@ -141,5 +142,81 @@ namespace SC4ModManager {
 				csv.WriteRecords(dict);
 			}
 		}
+		#endregion GetTGIs
+
+		private const string PropTextureCSVPath = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps\\!Deps.csv";
+		#region PropTextureCatalog
+		/// <summary>
+		/// Generates a CSV file of all TGIs.
+		/// </summary>
+		/// <param name="dbpfFiles">List of file paths to iterate through</param>
+		public static void GenerateMainPropTextureCatalogList(List<string> dbpfFiles) {
+			Dictionary<uint, PropTexture> allTGIs = new Dictionary<uint, PropTexture>();
+			uint idx = 0;
+			string exName;
+
+			foreach (string filePath in dbpfFiles) {
+				DBPFFile dbpf = new DBPFFile(filePath);
+				foreach (DBPFEntry entry in dbpf.ListOfEntries.Values) {
+
+					//Add all Base/Overlay textures. Look at the least significant 4 bits and only add if it is 0, 5, or A: And the Instance by 0b1111 (0xF) and check the modulus result.
+					if (entry.TGI.MatchesKnownTGI(DBPFTGI.FSH_BASE_OVERLAY) && ((entry.TGI.Instance & 0xF) % 5) == 0) {
+						allTGIs.Add(idx, new PropTexture { FilePath = filePath, TGI = entry.TGI.ToString(), ExemplarName = ""});
+						idx++;
+					}
+
+					//Add all Exemplars
+					else if (entry.TGI.MatchesKnownTGI(DBPFTGI.EXEMPLAR)) {
+						entry.DecodeEntry();
+						if (entry.DecodedData is null) {
+							continue;
+						}
+						DBPFProperty p = entry.GetProperty("ExemplarName");
+						p.DecodeValues();
+						exName = (string) p.DecodedValues.GetValue(0); //Decoded value of exemplar name is a string array of length 1
+						allTGIs.Add(idx, new PropTexture { FilePath = filePath, TGI = entry.TGI.ToString(), ExemplarName = exName });
+						idx++;
+					}
+
+					//Add all Cohorts. Note the Building/prop family of the Cohort is always 0x10000000 less than the Cohort's Index.
+					else if (entry.TGI.MatchesKnownTGI(DBPFTGI.COHORT)) {
+						DBPFTGI family = new DBPFTGI((uint) entry.TGI.Type, (uint) entry.TGI.Group, (uint) (entry.TGI.Instance - 0x10000000));
+						entry.DecodeEntry();
+						if (entry.DecodedData is null) {
+							continue;
+						}
+						DBPFProperty p = entry.GetProperty("ExemplarName");
+						p.DecodeValues();
+						exName = (string) p.DecodedValues.GetValue(0); //Decoded value of exemplar name is a string array of length 1
+						allTGIs.Add(idx, new PropTexture { FilePath = filePath, TGI = family.ToString(), ExemplarName = exName });
+						idx++;
+					}
+
+				}
+			}
+			WritePropTextureToCSV(allTGIs, TGIsCSVpath);
+		}
+		/// <summary>
+		/// Simple helper class to hold fields for writing TGIs to CSV file.
+		/// </summary>
+		private class PropTexture {
+			public string FilePath { get; set; }
+			public string TGI { get; set; }
+			public string ExemplarName { get; set; }
+			public override string ToString() {
+				return $"{FilePath}, {TGI}, {ExemplarName}";
+			}
+		}
+		/// <summary>
+		/// Writes the dictionary of all scanned Rep13s to CSV file
+		/// </summary>
+		/// <param name="dict"></param>
+		private static void WritePropTextureToCSV(Dictionary<uint, PropTexture> dict, string filePath) {
+			using (var writer = new StreamWriter(filePath))
+			using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture)) {
+				csv.WriteRecords(dict);
+			}
+		}
+		#endregion PropTextureCatalog
 	}
 }

@@ -36,7 +36,7 @@ namespace SC4ModManager {
 
 		public MainWindow() {
 			InitializeComponent();
-			string[] files = Directory.GetFiles(GAME_DIR, "*", SearchOption.TopDirectoryOnly);
+			string[] files = Directory.GetFiles(SC4_Deps, "*", SearchOption.TopDirectoryOnly);
 			List<string> dbpfFiles = new List<string>();
 			foreach (string file in files) {
 				if (DBPFUtil.IsFileDBPF(file)) {
@@ -46,7 +46,8 @@ namespace SC4ModManager {
 
 
 			//Analysis.GetRep13IIDs(dbpfFiles);
-			Analysis.GetTGIs(dbpfFiles);
+			//Analysis.GetTGIs(dbpfFiles);
+			Analysis.GenerateMainPropTextureCatalogList(dbpfFiles);
 		}
 	}
 }
