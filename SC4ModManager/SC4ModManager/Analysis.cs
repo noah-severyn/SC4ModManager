@@ -194,13 +194,20 @@ namespace SC4ModManager {
 
 				}
 			}
-			WritePropTextureToCSV(allTGIs, TGIsCSVpath);
+			WritePropTextureToCSV(allTGIs, PropTextureCSVPath);
 		}
 		/// <summary>
 		/// Simple helper class to hold fields for writing TGIs to CSV file.
 		/// </summary>
 		private class PropTexture {
 			public string FilePath { get; set; }
+			//TODO - FilePath should be a FileIdentifier instead:
+			//the path can change, filename can change - what will remain constant such that a file will be recognized even if it is edited - or do we care?
+			//possibly be some sort of combination of the date created unix timestamp, and first n and last n rows in the DIR table?
+
+			//ORRRRR do we not care at all, and just directly look at the TGIs contained in an upload by STEX and LEX id and use those as the identifiers <<<<<<<<<<<<<<
+
+			//index offset in the header might be a good measurement to tell if a file has been modified or not (but we have date modified so ????)
 			public string TGI { get; set; }
 			public string ExemplarName { get; set; }
 			public override string ToString() {

@@ -36,18 +36,19 @@ namespace SC4ModManager {
 
 		public MainWindow() {
 			InitializeComponent();
-			string[] files = Directory.GetFiles(SC4_Deps, "*", SearchOption.TopDirectoryOnly);
-			List<string> dbpfFiles = new List<string>();
-			foreach (string file in files) {
-				if (DBPFUtil.IsFileDBPF(file)) {
-					dbpfFiles.Add(file);
-				}
-			}
+			//string[] files = Directory.GetFiles(SC4_Deps, "*", SearchOption.TopDirectoryOnly);
+			//List<string> dbpfFiles = new List<string>();
+			//foreach (string file in files) {
+			//	if (DBPFUtil.IsFileDBPF(file)) {
+			//		dbpfFiles.Add(file);
+			//	}
+			//}
 
 
 			//Analysis.GetRep13IIDs(dbpfFiles);
 			//Analysis.GetTGIs(dbpfFiles);
-			Analysis.GenerateMainPropTextureCatalogList(dbpfFiles);
+			//Analysis.GenerateMainPropTextureCatalogList(dbpfFiles);
+			LEX_Access.AccessLEXFileInfo(2987);
 		}
 	}
 }
