@@ -24,31 +24,37 @@ namespace SC4ModManager {
 	/// Interaction logic for MainWindow.xaml
 	/// </summary>
 	public partial class MainWindow : Window {
-		private readonly string pluginsFolderDocs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\SimCity 4\\Plugins";
-		private readonly string B62_Files = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\B62";
-		private readonly string folderPath2 = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\B62\\B62-Albertsons 60's Retro v2.0";
-		private readonly string SC4_Deps = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps";
-		private readonly string Deps = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\!Deps";
-		private readonly string Deps2 = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\!Deps 2";
+		private readonly string DocsPlugins = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + "\\SimCity 4\\Plugins";
+		private readonly string DocsPluginsDeps = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\!Deps";
+		private readonly string DocsPluginsDeps2 = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\!Deps 2";
+
+		private readonly string GameDir = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SimCity 4 Deluxe";
+		private readonly string GamePlugins = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SimCity 4 Deluxe\\Plugins";
+
+		private readonly string B62Files = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\B62\\b62 unzipped";
+		private readonly string AllDeps = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps";
 		private readonly string STEX_Sample = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\STEX Entries Sample - 2021.10.22\\Files";
-		private readonly string GAME_DIR = "C:\\Program Files (x86)\\Steam\\steamapps\\common\\SimCity 4 Deluxe";
+
+		
 
 
 		public MainWindow() {
 			InitializeComponent();
-			//string[] files = Directory.GetFiles(SC4_Deps, "*", SearchOption.TopDirectoryOnly);
-			//List<string> dbpfFiles = new List<string>();
-			//foreach (string file in files) {
-			//	if (DBPFUtil.IsFileDBPF(file)) {
-			//		dbpfFiles.Add(file);
-			//	}
-			//}
+			string[] files = Directory.GetFiles(DocsPluginsDeps, "*", SearchOption.TopDirectoryOnly);
+			List<string> dbpfFiles = new List<string>();
+			foreach (string file in files) {
+				if (DBPFUtil.IsFileDBPF(file)) {
+					dbpfFiles.Add(file);
+				}
+			}
 
+			//Analysis.GetRep13IIDs(dbpfFiles); //creates "rep13IIDs.csv"
 
-			//Analysis.GetRep13IIDs(dbpfFiles);
-			//Analysis.GetTGIs(dbpfFiles);
-			//Analysis.GenerateMainPropTextureCatalogList(dbpfFiles);
-			LEX_Access.AccessLEXFileInfo(2987);
+			Analysis.GetTGIs(dbpfFiles); //creates "foundTGIs.csv"
+
+			//Analysis.GenerateMainPropTextureCatalogList(dbpfFiles); //creates "depTGIs.csv"
+
+			//LEX_Access.AccessLEXFileInfo(2987);
 		}
 	}
 }

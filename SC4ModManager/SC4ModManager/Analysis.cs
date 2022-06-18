@@ -85,7 +85,7 @@ namespace SC4ModManager {
 		}
 		#endregion Rep13IIDs
 
-		private const string TGIsCSVpath = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\allTGIs.csv";
+		private const string TGIsCSVpath = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\foundTGIs.csv";
 		#region GetTGIs
 		/// <summary>
 		/// Generates a CSV file of all TGIs.
@@ -144,7 +144,7 @@ namespace SC4ModManager {
 		}
 		#endregion GetTGIs
 
-		private const string PropTextureCSVPath = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps\\!Deps.csv";
+		private const string PropTextureCSVPath = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps\\depTGIs.csv";
 		#region PropTextureCatalog
 		/// <summary>
 		/// Generates a CSV file of all TGIs.
