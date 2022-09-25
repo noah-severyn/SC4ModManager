@@ -7,6 +7,7 @@ using CsvHelper;
 using System.Text;
 using csDBPF;
 using csDBPF.Properties;
+using System.Linq;
 
 namespace SC4ModManager {
 	public static class Analysis {
@@ -23,10 +24,10 @@ namespace SC4ModManager {
 			//Loop through each file
 			foreach (string filePath in dbpfFiles) {
 				DBPFFile dbpf = new DBPFFile(filePath);
-				OrderedDictionary listOfEntries = dbpf.ListOfEntries;
+				List<DBPFEntry> listOfEntries = dbpf.ListOfEntries;
 
 				//Loop through each subfile
-				foreach (DBPFEntry entry in listOfEntries.Values) {
+				foreach (DBPFEntry entry in listOfEntries) {
 					if (entry.TGI.MatchesKnownTGI(DBPFTGI.EXEMPLAR)) {
 						//Initialize the list of properties for this entry
 						entry.DecodeEntry();
@@ -38,7 +39,7 @@ namespace SC4ModManager {
 						}
 
 						//We know this exemplar is type 0x10 (Lot Configuration) so continue on to snag the LotConfigPropertyLotObjectData properties
-						foreach (DBPFProperty property in entry.ListOfProperties.Values) {
+						foreach (DBPFProperty property in entry.ListOfProperties) {
 							//LotConfigPropertyLotObjectData must be between 0x88edc900 and 0x88edce00 - first one is 0x88edc900 and can continue on for max 1280 repetitions total
 							if (property.ID >= 0x88edc900 && property.ID <= 0x88edce00) {
 								property.DecodeValues();
@@ -49,7 +50,7 @@ namespace SC4ModManager {
 								uint lotObjectType = (uint) lotObjects.GetValue(0);
 								if (lotObjectType == (int) DBPFProperty.LotConfigPropertyLotObjectTypes.Building || lotObjectType == (int) DBPFProperty.LotConfigPropertyLotObjectTypes.Prop ||
 									lotObjectType == (int) DBPFProperty.LotConfigPropertyLotObjectTypes.Texture || lotObjectType == (int) DBPFProperty.LotConfigPropertyLotObjectTypes.Flora) {
-									listOfRep13IIDs.Add(idx, new Rep13IIDs { FilePath = filePath, Rep0IID = lotObjectType, Rep13IID = (uint) lotObjects.GetValue(12) });
+									listOfRep13IIDs.Add(idx, new Rep13IIDs { ParentTGI = entry.TGI.ToString(), Rep0IID = lotObjectType, Rep13IID = (uint) lotObjects.GetValue(12) });
 									idx++;
 								}
 							}
@@ -64,12 +65,12 @@ namespace SC4ModManager {
 		/// Simple helper class to hold fields for writing Rep13s to CSV file.
 		/// </summary>
 		private class Rep13IIDs {
-			public string FilePath { get; set; }
+			public string ParentTGI { get; set; }
 			public uint Rep0IID { get; set; }
 			public uint Rep13IID { get; set; }
 
 			public override string ToString() {
-				return $"{FilePath}, {Rep0IID}, 0x{DBPFUtil.UIntToHexString(Rep13IID)}";
+				return $"{ParentTGI}, {Rep0IID}, 0x{DBPFUtil.UIntToHexString(Rep13IID)}";
 			}
 		}
 		/// <summary>
@@ -97,7 +98,7 @@ namespace SC4ModManager {
 
 			foreach (string filePath in dbpfFiles) {
 				DBPFFile dbpf = new DBPFFile(filePath);
-				foreach (DBPFTGI tgi in dbpf.ListOfTGIs.Values) {
+				foreach (DBPFTGI tgi in dbpf.ListOfTGIs) {
 
 					//Add all Base/Overlay textures. Look at the least significant 4 bits and only add if it is 0, 5, or A: And the Instance by 0b1111 (0xF) and check the modulus result.
 					if (tgi.MatchesKnownTGI(DBPFTGI.FSH_BASE_OVERLAY) && ((tgi.Instance & 0xF) % 5) == 0) {
@@ -117,7 +118,7 @@ namespace SC4ModManager {
 						allTGIs.Add(idx, new TGIs { FilePath = filePath, TGI = family.ToString() });
 						idx++;
 					}
-					
+
 				}
 			}
 			WriteTGIsToCSV(allTGIs, TGIsCSVpath);
@@ -157,11 +158,11 @@ namespace SC4ModManager {
 
 			foreach (string filePath in dbpfFiles) {
 				DBPFFile dbpf = new DBPFFile(filePath);
-				foreach (DBPFEntry entry in dbpf.ListOfEntries.Values) {
+				foreach (DBPFEntry entry in dbpf.ListOfEntries) {
 
 					//Add all Base/Overlay textures. Look at the least significant 4 bits and only add if it is 0, 5, or A: And the Instance by 0b1111 (0xF) and check the modulus result.
 					if (entry.TGI.MatchesKnownTGI(DBPFTGI.FSH_BASE_OVERLAY) && ((entry.TGI.Instance & 0xF) % 5) == 0) {
-						allTGIs.Add(idx, new PropTexture { FilePath = filePath, TGI = entry.TGI.ToString(), ExemplarName = ""});
+						allTGIs.Add(idx, new PropTexture { FilePath = filePath, TGI = entry.TGI.ToString(), ExemplarName = "" });
 						idx++;
 					}
 
@@ -225,5 +226,99 @@ namespace SC4ModManager {
 			}
 		}
 		#endregion PropTextureCatalog
+
+
+		private const string LotListCSVPath = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\working\\LotList.csv";
+		//scan exemplars for lot size, growth stage, lot name, jmyers
+		public static void GenerateLotList(List<string> dbpfFiles) {
+			//create a new dictionary to store the scanned lot items
+			List<LotList> lotList = new List<LotList>();
+
+			foreach (string filePath in dbpfFiles) {
+				DBPFFile file = new DBPFFile(filePath);
+				//file.DecodeAllEntries();
+
+
+				//In a DBPF file, the indicies of TGIs corresponds dicrectly to the indicies of Entries
+				//Filter down list of entries to only target the desired ones using LINQ
+				var filteredEntries = from entry in file.ListOfEntries
+									  where entry.MatchesKnownEntryType(DBPFTGI.EXEMPLAR)
+									  select entry;
+
+				foreach (DBPFEntry entry in filteredEntries) {
+					entry.DecodeEntry();
+					if (entry.GetExemplarType() == (int) DBPFProperty.ExemplarTypes.LotConfiguration) {
+						entry.DecodeAllProperties();
+					} else {
+						continue;
+					}
+
+					LotList listItem = new LotList();
+					listItem.Name = (string) entry.GetProperty("Exemplar Name").DecodedValues.GetValue(0);
+					listItem.Stage = (byte) entry.GetProperty("Growth Stage").DecodedValues.GetValue(0);
+					listItem.LotSizeX = (byte) entry.GetProperty("LotConfigPropertySize").DecodedValues.GetValue(0);
+					listItem.LotSizeY = (byte) entry.GetProperty("LotConfigPropertySize").DecodedValues.GetValue(1);
+					int purposeType = (byte) entry.GetProperty("LotConfigPropertyPurposeTypes").DecodedValues.GetValue(0);
+					switch (purposeType) {
+						case 1:
+							listItem.RCIType = "R";
+							break;
+						case 2:
+							listItem.RCIType = "CS";
+							break;
+						case 3:
+							listItem.RCIType = "CO";
+							break;
+						case 5:
+							listItem.RCIType = "IR";
+							break;
+						case 6:
+							listItem.RCIType = "ID";
+							break;
+						case 7:
+							listItem.RCIType = "IM";
+							break;
+						case 8:
+							listItem.RCIType = "IHT";
+							break;
+						default:
+							break;
+					}
+
+					int wealthType = (byte) entry.GetProperty("LotConfigPropertyWealthTypes").DecodedValues.GetValue(0);
+					string wealth = new string('$', wealthType);
+					listItem.RCIType += wealth;
+
+					lotList.Add(listItem);
+				}
+			}
+
+			WriteLotListToCSV(lotList, LotListCSVPath);
+		}
+
+
+
+
+		private class LotList {
+			public string RCIType { get; set; }
+			public byte LotSizeX { get; set; }
+			public byte LotSizeY { get; set; }
+			public byte Stage { get; set; }
+			public string Name { get; set; }
+
+			public override string ToString() {
+
+				return $"{RCIType}, {Stage}, {LotSizeX}x{LotSizeY}, {Name}";
+			}
+		}
+
+
+		private static void WriteLotListToCSV(List<LotList> list, string filePath) {
+			using (var writer = new StreamWriter(filePath))
+			using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture)) {
+				csv.WriteRecords(list);
+			}
+		}
+
 	}
 }
