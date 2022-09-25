@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.32413.511
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32602.215
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SC4ModManager", "SC4ModManager\SC4ModManager.csproj", "{76C318E7-8947-4A65-B892-D7A03B08AABC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SC4ModManager", "SC4ModManager\SC4ModManager.csproj", "{76C318E7-8947-4A65-B892-D7A03B08AABC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
