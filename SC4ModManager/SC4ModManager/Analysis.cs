@@ -11,15 +11,14 @@ using System.Linq;
 
 namespace SC4ModManager {
 	public static class Analysis {
-		private const string Rep13sCSVpath = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\rep13IIDs.csv";
 		#region Rep13IIDs
+		private const string Rep13sCSVpath = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\rep13IIDs.csv";
 		/// <summary>
 		/// Generates a CSV file of all props, textures, buildings, and flora used on lots (Rep 13 of the LotConfigPropertyLotObjectData properties).
 		/// </summary>
 		/// <param name="dbpfFiles">List of file paths to iterate through</param>
 		public static void GetRep13IIDs(List<string> dbpfFiles) {
-			Dictionary<uint, Rep13IIDs> listOfRep13IIDs = new Dictionary<uint, Rep13IIDs>();
-			uint idx = 0;
+			List<Rep13IIDs> listOfRep13IIDs = new List<Rep13IIDs>();
 
 			//Loop through each file
 			foreach (string filePath in dbpfFiles) {
@@ -50,8 +49,7 @@ namespace SC4ModManager {
 								uint lotObjectType = (uint) lotObjects.GetValue(0);
 								if (lotObjectType == (int) DBPFProperty.LotConfigPropertyLotObjectTypes.Building || lotObjectType == (int) DBPFProperty.LotConfigPropertyLotObjectTypes.Prop ||
 									lotObjectType == (int) DBPFProperty.LotConfigPropertyLotObjectTypes.Texture || lotObjectType == (int) DBPFProperty.LotConfigPropertyLotObjectTypes.Flora) {
-									listOfRep13IIDs.Add(idx, new Rep13IIDs { ParentTGI = entry.TGI.ToString(), Rep0IID = lotObjectType, Rep13IID = (uint) lotObjects.GetValue(12) });
-									idx++;
+									listOfRep13IIDs.Add(new Rep13IIDs { ParentTGI = entry.TGI.ToString(), Rep0IID = lotObjectType, Rep13IID = (uint) lotObjects.GetValue(12) });
 								}
 							}
 						}
@@ -59,7 +57,7 @@ namespace SC4ModManager {
 				}
 			}
 
-			WriteRep13sToCSV(listOfRep13IIDs, Rep13sCSVpath);
+			WriteListToCSV(listOfRep13IIDs, Rep13sCSVpath);
 		}
 		/// <summary>
 		/// Simple helper class to hold fields for writing Rep13s to CSV file.
@@ -73,28 +71,17 @@ namespace SC4ModManager {
 				return $"{ParentTGI}, {Rep0IID}, 0x{DBPFUtil.UIntToHexString(Rep13IID)}";
 			}
 		}
-		/// <summary>
-		/// Writes the dictionary of all scanned Rep13s to CSV file
-		/// </summary>
-		/// <param name="dict"></param>
-		/// <see cref="https://joshclose.github.io/CsvHelper/getting-started/#writing-a-csv-file"/>
-		private static void WriteRep13sToCSV(Dictionary<uint, Rep13IIDs> dict, string filePath) {
-			using (var writer = new StreamWriter(filePath))
-			using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture)) {
-				csv.WriteRecords(dict);
-			}
-		}
 		#endregion Rep13IIDs
 
-		private const string TGIsCSVpath = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\foundTGIs.csv";
+
 		#region GetTGIs
+		private const string TGIsCSVpath = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\foundTGIs.csv";
 		/// <summary>
 		/// Generates a CSV file of all TGIs.
 		/// </summary>
 		/// <param name="dbpfFiles">List of file paths to iterate through</param>
 		public static void GetTGIs(List<string> dbpfFiles) {
-			Dictionary<uint, TGIs> allTGIs = new Dictionary<uint, TGIs>();
-			uint idx = 0;
+			List<TGIs> allTGIs = new List<TGIs>();
 
 			foreach (string filePath in dbpfFiles) {
 				DBPFFile dbpf = new DBPFFile(filePath);
@@ -102,26 +89,23 @@ namespace SC4ModManager {
 
 					//Add all Base/Overlay textures. Look at the least significant 4 bits and only add if it is 0, 5, or A: And the Instance by 0b1111 (0xF) and check the modulus result.
 					if (tgi.MatchesKnownTGI(DBPFTGI.FSH_BASE_OVERLAY) && ((tgi.Instance & 0xF) % 5) == 0) {
-						allTGIs.Add(idx, new TGIs { FilePath = filePath, TGI = tgi.ToString() });
-						idx++;
+						allTGIs.Add(new TGIs { FilePath = filePath, TGI = tgi.ToString() });
 					}
 
 					//Add all Exemplars
 					else if (tgi.MatchesKnownTGI(DBPFTGI.EXEMPLAR)) {
-						allTGIs.Add(idx, new TGIs { FilePath = filePath, TGI = tgi.ToString() });
-						idx++;
+						allTGIs.Add(new TGIs { FilePath = filePath, TGI = tgi.ToString() });
 					}
 
 					//Add all Cohorts. Note the Building/prop family of the Cohort is always 0x10000000 less than the Cohort's Index.
 					else if (tgi.MatchesKnownTGI(DBPFTGI.COHORT)) {
 						DBPFTGI family = new DBPFTGI((uint) tgi.Type, (uint) tgi.Group, (uint) (tgi.Instance - 0x10000000));
-						allTGIs.Add(idx, new TGIs { FilePath = filePath, TGI = family.ToString() });
-						idx++;
+						allTGIs.Add(new TGIs { FilePath = filePath, TGI = family.ToString() });
 					}
 
 				}
 			}
-			WriteTGIsToCSV(allTGIs, TGIsCSVpath);
+			WriteListToCSV(allTGIs, TGIsCSVpath);
 		}
 		/// <summary>
 		/// Simple helper class to hold fields for writing TGIs to CSV file.
@@ -133,27 +117,17 @@ namespace SC4ModManager {
 				return $"{FilePath}, {TGI}";
 			}
 		}
-		/// <summary>
-		/// Writes the dictionary of all scanned Rep13s to CSV file
-		/// </summary>
-		/// <param name="dict"></param>
-		private static void WriteTGIsToCSV(Dictionary<uint, TGIs> dict, string filePath) {
-			using (var writer = new StreamWriter(filePath))
-			using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture)) {
-				csv.WriteRecords(dict);
-			}
-		}
 		#endregion GetTGIs
 
-		private const string PropTextureCSVPath = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps\\depTGIs.csv";
+
 		#region PropTextureCatalog
+		private const string PropTextureCSVPath = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps\\depTGIs.csv";
 		/// <summary>
 		/// Generates a CSV file of all TGIs.
 		/// </summary>
 		/// <param name="dbpfFiles">List of file paths to iterate through</param>
 		public static void GenerateMainPropTextureCatalogList(List<string> dbpfFiles) {
-			Dictionary<uint, PropTexture> allTGIs = new Dictionary<uint, PropTexture>();
-			uint idx = 0;
+			List<PropTexture> allTGIs = new List<PropTexture>();
 			string exName;
 
 			foreach (string filePath in dbpfFiles) {
@@ -162,8 +136,7 @@ namespace SC4ModManager {
 
 					//Add all Base/Overlay textures. Look at the least significant 4 bits and only add if it is 0, 5, or A: And the Instance by 0b1111 (0xF) and check the modulus result.
 					if (entry.TGI.MatchesKnownTGI(DBPFTGI.FSH_BASE_OVERLAY) && ((entry.TGI.Instance & 0xF) % 5) == 0) {
-						allTGIs.Add(idx, new PropTexture { FilePath = filePath, TGI = entry.TGI.ToString(), ExemplarName = "" });
-						idx++;
+						allTGIs.Add(new PropTexture { FilePath = filePath, TGI = entry.TGI.ToString(), ExemplarName = "" });
 					}
 
 					//Add all Exemplars
@@ -175,8 +148,7 @@ namespace SC4ModManager {
 						DBPFProperty p = entry.GetProperty("ExemplarName");
 						p.DecodeValues();
 						exName = (string) p.DecodedValues.GetValue(0); //Decoded value of exemplar name is a string array of length 1
-						allTGIs.Add(idx, new PropTexture { FilePath = filePath, TGI = entry.TGI.ToString(), ExemplarName = exName });
-						idx++;
+						allTGIs.Add(new PropTexture { FilePath = filePath, TGI = entry.TGI.ToString(), ExemplarName = exName });
 					}
 
 					//Add all Cohorts. Note the Building/prop family of the Cohort is always 0x10000000 less than the Cohort's Index.
@@ -189,13 +161,12 @@ namespace SC4ModManager {
 						DBPFProperty p = entry.GetProperty("ExemplarName");
 						p.DecodeValues();
 						exName = (string) p.DecodedValues.GetValue(0); //Decoded value of exemplar name is a string array of length 1
-						allTGIs.Add(idx, new PropTexture { FilePath = filePath, TGI = family.ToString(), ExemplarName = exName });
-						idx++;
+						allTGIs.Add(new PropTexture { FilePath = filePath, TGI = family.ToString(), ExemplarName = exName });
 					}
 
 				}
 			}
-			WritePropTextureToCSV(allTGIs, PropTextureCSVPath);
+			WriteListToCSV(allTGIs, PropTextureCSVPath);
 		}
 		/// <summary>
 		/// Simple helper class to hold fields for writing TGIs to CSV file.
@@ -215,28 +186,21 @@ namespace SC4ModManager {
 				return $"{FilePath}, {TGI}, {ExemplarName}";
 			}
 		}
-		/// <summary>
-		/// Writes the dictionary of all scanned Rep13s to CSV file
-		/// </summary>
-		/// <param name="dict"></param>
-		private static void WritePropTextureToCSV(Dictionary<uint, PropTexture> dict, string filePath) {
-			using (var writer = new StreamWriter(filePath))
-			using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture)) {
-				csv.WriteRecords(dict);
-			}
-		}
 		#endregion PropTextureCatalog
 
 
+		#region LotList
 		private const string LotListCSVPath = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\working\\LotList.csv";
+		private const string BldgListCSVPath = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\working\\BldgList.csv";
 		//scan exemplars for lot size, growth stage, lot name, jmyers
 		public static void GenerateLotList(List<string> dbpfFiles) {
 			//create a new dictionary to store the scanned lot items
 			List<LotList> lotList = new List<LotList>();
+			List<BuildingList> bldgList = new List<BuildingList>();
 
 			foreach (string filePath in dbpfFiles) {
 				DBPFFile file = new DBPFFile(filePath);
-				//file.DecodeAllEntries();
+				file.DecodeAllEntries();
 
 
 				//In a DBPF file, the indicies of TGIs corresponds dicrectly to the indicies of Entries
@@ -247,57 +211,67 @@ namespace SC4ModManager {
 
 				foreach (DBPFEntry entry in filteredEntries) {
 					entry.DecodeEntry();
+
 					if (entry.GetExemplarType() == (int) DBPFProperty.ExemplarTypes.LotConfiguration) {
 						entry.DecodeAllProperties();
-					} else {
-						continue;
+
+						LotList listItem = new LotList();
+						listItem.Name = (string) entry.GetProperty("Exemplar Name").DecodedValues.GetValue(0);
+						listItem.Stage = (byte) entry.GetProperty("Growth Stage").DecodedValues.GetValue(0);
+						listItem.LotSizeX = (byte) entry.GetProperty("LotConfigPropertySize").DecodedValues.GetValue(0);
+						listItem.LotSizeY = (byte) entry.GetProperty("LotConfigPropertySize").DecodedValues.GetValue(1);
+						listItem.BuildingInstance = (uint) ByteArrayHelper.ToUInt32Array((byte[]) entry.GetProperty(0x88edc900).DecodedValues).GetValue(12);
+						int purposeType = (byte) entry.GetProperty("LotConfigPropertyPurposeTypes").DecodedValues.GetValue(0);
+						switch (purposeType) {
+							case 1:
+								listItem.RCIType = "R";
+								break;
+							case 2:
+								listItem.RCIType = "CS";
+								break;
+							case 3:
+								listItem.RCIType = "CO";
+								break;
+							case 5:
+								listItem.RCIType = "IR";
+								break;
+							case 6:
+								listItem.RCIType = "ID";
+								break;
+							case 7:
+								listItem.RCIType = "IM";
+								break;
+							case 8:
+								listItem.RCIType = "IHT";
+								break;
+							default:
+								break;
+						}
+
+						int wealthType = (byte) entry.GetProperty("LotConfigPropertyWealthTypes").DecodedValues.GetValue(0);
+						string wealth = new string('$', wealthType);
+						listItem.RCIType += wealth;
+
+						lotList.Add(listItem);
+					} 
+					
+					else if (entry.GetExemplarType() == (int) DBPFProperty.ExemplarTypes.Building) {
+						entry.DecodeAllProperties();
+
+						BuildingList bldgItem = new BuildingList();
+						bldgItem.BuildingName = (string) entry.GetProperty("Exemplar Name").DecodedValues.GetValue(0);
+						bldgItem.Instance = (uint) entry.TGI.Instance;
+						bldgItem.Tilesets = ByteArrayHelper.ToUInt32Array((byte[]) entry.GetProperty("OccupantGroups").DecodedValues).ToList();
+						bldgList.Add(bldgItem);
 					}
 
-					LotList listItem = new LotList();
-					listItem.Name = (string) entry.GetProperty("Exemplar Name").DecodedValues.GetValue(0);
-					listItem.Stage = (byte) entry.GetProperty("Growth Stage").DecodedValues.GetValue(0);
-					listItem.LotSizeX = (byte) entry.GetProperty("LotConfigPropertySize").DecodedValues.GetValue(0);
-					listItem.LotSizeY = (byte) entry.GetProperty("LotConfigPropertySize").DecodedValues.GetValue(1);
-					int purposeType = (byte) entry.GetProperty("LotConfigPropertyPurposeTypes").DecodedValues.GetValue(0);
-					switch (purposeType) {
-						case 1:
-							listItem.RCIType = "R";
-							break;
-						case 2:
-							listItem.RCIType = "CS";
-							break;
-						case 3:
-							listItem.RCIType = "CO";
-							break;
-						case 5:
-							listItem.RCIType = "IR";
-							break;
-						case 6:
-							listItem.RCIType = "ID";
-							break;
-						case 7:
-							listItem.RCIType = "IM";
-							break;
-						case 8:
-							listItem.RCIType = "IHT";
-							break;
-						default:
-							break;
-					}
-
-					int wealthType = (byte) entry.GetProperty("LotConfigPropertyWealthTypes").DecodedValues.GetValue(0);
-					string wealth = new string('$', wealthType);
-					listItem.RCIType += wealth;
-
-					lotList.Add(listItem);
+					
 				}
 			}
 
-			WriteLotListToCSV(lotList, LotListCSVPath);
+			WriteListToCSV(lotList, LotListCSVPath);
+			WriteListToCSV(bldgList, BldgListCSVPath);
 		}
-
-
-
 
 		private class LotList {
 			public string RCIType { get; set; }
@@ -305,20 +279,38 @@ namespace SC4ModManager {
 			public byte LotSizeY { get; set; }
 			public byte Stage { get; set; }
 			public string Name { get; set; }
+			public uint BuildingInstance { get; set; }
 
 			public override string ToString() {
-
-				return $"{RCIType}, {Stage}, {LotSizeX}x{LotSizeY}, {Name}";
+				return $"{RCIType}, {Stage}, {LotSizeX}x{LotSizeY}, {DBPFUtil.UIntToHexString(BuildingInstance)}, {Name}";
 			}
 		}
 
+		private class BuildingList {
+			public uint Instance { get; set; }
+			public string BuildingName { get; set; }
+			public List<uint> Tilesets { get; set; }
 
-		private static void WriteLotListToCSV(List<LotList> list, string filePath) {
+			public override string ToString() {
+				return $"{DBPFUtil.UIntToHexString(Instance)}, {BuildingName}, {Tilesets}";
+			}
+
+		}
+		#endregion LotList
+
+
+
+
+		/// <summary>
+		/// Writes the dictionary of all scanned Rep13s to CSV file
+		/// </summary>
+		/// <param name="dict"></param>
+		/// <see cref="https://joshclose.github.io/CsvHelper/getting-started/#writing-a-csv-file"/>
+		private static void WriteListToCSV<T>(List<T> list, string filePath) {
 			using (var writer = new StreamWriter(filePath))
 			using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture)) {
 				csv.WriteRecords(list);
 			}
 		}
-
 	}
 }
