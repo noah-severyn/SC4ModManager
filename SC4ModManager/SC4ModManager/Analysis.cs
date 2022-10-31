@@ -8,6 +8,7 @@ using System.Text;
 using csDBPF;
 using csDBPF.Properties;
 using System.Linq;
+using System.Windows.Documents;
 
 namespace SC4ModManager {
 	public static class Analysis {
@@ -121,7 +122,7 @@ namespace SC4ModManager {
 
 
 		#region PropTextureCatalog
-		private const string PropTextureCSVPath = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps\\depTGIs.csv";
+		private const string PropTextureCSVPath = "C:\\Users\\Administrator\\OneDrive\\Documents\\Repositories\\SC4PropTextureCatalog\\resources\\PropTextTGIs.csv";
 		/// <summary>
 		/// Generates a CSV file of all TGIs.
 		/// </summary>
@@ -135,16 +136,13 @@ namespace SC4ModManager {
 				foreach (DBPFEntry entry in dbpf.ListOfEntries) {
 
 					//Add all Base/Overlay textures. Look at the least significant 4 bits and only add if it is 0, 5, or A: And the Instance by 0b1111 (0xF) and check the modulus result.
-					if (entry.TGI.MatchesKnownTGI(DBPFTGI.FSH_BASE_OVERLAY) && ((entry.TGI.Instance & 0xF) % 5) == 0) {
+					if (entry.MatchesKnownEntryType(DBPFTGI.FSH_BASE_OVERLAY) && ((entry.TGI.Instance & 0xF) % 5) == 0) {
 						allTGIs.Add(new PropTexture { FilePath = filePath, TGI = entry.TGI.ToString(), ExemplarName = "" });
 					}
 
 					//Add all Exemplars
-					else if (entry.TGI.MatchesKnownTGI(DBPFTGI.EXEMPLAR)) {
+					else if (entry.MatchesKnownEntryType(DBPFTGI.EXEMPLAR)) {
 						entry.DecodeEntry();
-						if (entry.DecodedData is null) {
-							continue;
-						}
 						DBPFProperty p = entry.GetProperty("ExemplarName");
 						p.DecodeValues();
 						exName = (string) p.DecodedValues.GetValue(0); //Decoded value of exemplar name is a string array of length 1
@@ -152,7 +150,7 @@ namespace SC4ModManager {
 					}
 
 					//Add all Cohorts. Note the Building/prop family of the Cohort is always 0x10000000 less than the Cohort's Index.
-					else if (entry.TGI.MatchesKnownTGI(DBPFTGI.COHORT)) {
+					else if (entry.MatchesKnownEntryType(DBPFTGI.COHORT)) {
 						DBPFTGI family = new DBPFTGI((uint) entry.TGI.Type, (uint) entry.TGI.Group, (uint) (entry.TGI.Instance - 0x10000000));
 						entry.DecodeEntry();
 						if (entry.DecodedData is null) {
@@ -193,7 +191,7 @@ namespace SC4ModManager {
 		private const string LotListCSVPath = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\working\\LotList.csv";
 		private const string BldgListCSVPath = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\working\\BldgList.csv";
 		//scan exemplars for lot size, growth stage, lot name, jmyers
-		public static void GenerateLotList(List<string> dbpfFiles) {
+		public static void GenerateLotListTables(List<string> dbpfFiles) {
 			//create a new dictionary to store the scanned lot items
 			List<LotList> lotList = new List<LotList>();
 			List<BuildingList> bldgList = new List<BuildingList>();
@@ -201,7 +199,6 @@ namespace SC4ModManager {
 			foreach (string filePath in dbpfFiles) {
 				DBPFFile file = new DBPFFile(filePath);
 				file.DecodeAllEntries();
-
 
 				//In a DBPF file, the indicies of TGIs corresponds dicrectly to the indicies of Entries
 				//Filter down list of entries to only target the desired ones using LINQ
@@ -212,16 +209,36 @@ namespace SC4ModManager {
 				foreach (DBPFEntry entry in filteredEntries) {
 					entry.DecodeEntry();
 
+					//Loop through LotConfigs to get lot info like stage, lot dims, wealth, etc.
 					if (entry.GetExemplarType() == (int) DBPFProperty.ExemplarTypes.LotConfiguration) {
 						entry.DecodeAllProperties();
+
+
+
 
 						LotList listItem = new LotList();
 						listItem.Name = (string) entry.GetProperty("Exemplar Name").DecodedValues.GetValue(0);
 						listItem.Stage = (byte) entry.GetProperty("Growth Stage").DecodedValues.GetValue(0);
 						listItem.LotSizeX = (byte) entry.GetProperty("LotConfigPropertySize").DecodedValues.GetValue(0);
 						listItem.LotSizeY = (byte) entry.GetProperty("LotConfigPropertySize").DecodedValues.GetValue(1);
-						listItem.BuildingInstance = (uint) ByteArrayHelper.ToUInt32Array((byte[]) entry.GetProperty(0x88edc900).DecodedValues).GetValue(12);
-						int purposeType = (byte) entry.GetProperty("LotConfigPropertyPurposeTypes").DecodedValues.GetValue(0);
+
+
+						DBPFProperty prop = entry.GetProperty(0x88edc900);
+						Array vals = Array.CreateInstance(prop.DataType.PrimitiveDataType,prop.NumberOfReps);
+						vals = prop.DecodedValues;
+						if (prop is null) {
+							continue;
+						}
+						listItem.BuildingInstance = (uint) vals.GetValue(12);
+
+						prop = entry.GetProperty("LotConfigPropertyPurposeTypes");
+						if (prop is null) {
+							continue;
+						}
+						if (prop.DecodedValues.Length == 0) { //have to account for some properties that might not have any values set
+							continue;
+						}
+						int purposeType = (byte) prop.DecodedValues.GetValue(0);
 						switch (purposeType) {
 							case 1:
 								listItem.RCIType = "R";
@@ -255,22 +272,39 @@ namespace SC4ModManager {
 						lotList.Add(listItem);
 					} 
 					
+					//Loop through Building exemplars to get tileset info
 					else if (entry.GetExemplarType() == (int) DBPFProperty.ExemplarTypes.Building) {
 						entry.DecodeAllProperties();
 
 						BuildingList bldgItem = new BuildingList();
 						bldgItem.BuildingName = (string) entry.GetProperty("Exemplar Name").DecodedValues.GetValue(0);
 						bldgItem.Instance = (uint) entry.TGI.Instance;
-						bldgItem.Tilesets = ByteArrayHelper.ToUInt32Array((byte[]) entry.GetProperty("OccupantGroups").DecodedValues).ToList();
+
+						DBPFProperty prop = entry.GetProperty("OccupantGroups");
+						if (prop is null) { //no guarantee that a building will have this property (it could be in a cohort)
+							continue;
+						}
+						Array vals = Array.CreateInstance(prop.DataType.PrimitiveDataType, prop.NumberOfReps);
+						vals = prop.DecodedValues;
+						bldgItem.Tilesets = ArrayToString(vals);
 						bldgList.Add(bldgItem);
 					}
-
-					
 				}
 			}
 
 			WriteListToCSV(lotList, LotListCSVPath);
 			WriteListToCSV(bldgList, BldgListCSVPath);
+		}
+
+		private static string ArrayToString(Array vals) {
+			StringBuilder sb = new StringBuilder();
+			foreach (uint item in vals) {
+				if (item >= 0x2000 && item <= 0x2003) {
+					sb.Append(DBPFUtil.UIntToHexString(item, 4) + ";");
+				}
+				
+			}
+			return sb.ToString();
 		}
 
 		private class LotList {
@@ -289,7 +323,7 @@ namespace SC4ModManager {
 		private class BuildingList {
 			public uint Instance { get; set; }
 			public string BuildingName { get; set; }
-			public List<uint> Tilesets { get; set; }
+			public string Tilesets { get; set; }
 
 			public override string ToString() {
 				return $"{DBPFUtil.UIntToHexString(Instance)}, {BuildingName}, {Tilesets}";

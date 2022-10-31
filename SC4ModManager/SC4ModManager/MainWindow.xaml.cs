@@ -35,13 +35,14 @@ namespace SC4ModManager {
 		private readonly string B62Files = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\B62\\b62 unzipped";
 		private readonly string AllDeps = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps";
 		private readonly string STEX_Sample = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\STEX Entries Sample - 2021.10.22\\Files";
+		private readonly string FINAL = "C:\\Users\\Administrator\\OneDrive\\FINAL";
 
-		
+		private readonly string tempfolder = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps\\test";
 
 
 		public MainWindow() {
 			InitializeComponent();
-			string[] files = Directory.GetFiles(DocsPluginsWorking, "*", SearchOption.AllDirectories);
+			string[] files = Directory.GetFiles(tempfolder, "*", SearchOption.AllDirectories);
 			List<string> dbpfFiles = new List<string>();
 			foreach (string file in files) {
 				if (DBPFUtil.IsFileDBPF(file)) {
@@ -53,11 +54,11 @@ namespace SC4ModManager {
 
 			//Analysis.GetTGIs(dbpfFiles); //creates "foundTGIs.csv"
 
-			//Analysis.GenerateMainPropTextureCatalogList(dbpfFiles); //creates "depTGIs.csv"
+			Analysis.GenerateMainPropTextureCatalogList(dbpfFiles); //creates "depTGIs.csv"
 
 			//LEX_Access.AccessLEXFileInfo(2987);
 
-			Analysis.GenerateLotList(dbpfFiles);
+			//Analysis.GenerateLotListTables(dbpfFiles);
 		}
 	}
 }
