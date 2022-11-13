@@ -42,7 +42,7 @@ namespace SC4ModManager {
 
 		public MainWindow() {
 			InitializeComponent();
-			string[] files = Directory.GetFiles(tempfolder, "*", SearchOption.AllDirectories);
+			string[] files = Directory.GetFiles(AllDeps, "*", SearchOption.TopDirectoryOnly);
 			List<string> dbpfFiles = new List<string>();
 			foreach (string file in files) {
 				if (DBPFUtil.IsFileDBPF(file)) {

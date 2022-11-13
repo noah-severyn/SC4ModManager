@@ -128,8 +128,11 @@ namespace SC4ModManager {
 		/// </summary>
 		/// <param name="dbpfFiles">List of file paths to iterate through</param>
 		public static void GenerateMainPropTextureCatalogList(List<string> dbpfFiles) {
-			List<PropTexture> allTGIs = new List<PropTexture>();
+			//List<PropTexture> allTGIs = new List<PropTexture>();
 			string exName;
+
+			var db = new Catalog.DatabaseHandler("C:\\Users\\Administrator\\Desktop\\");
+
 
 			foreach (string filePath in dbpfFiles) {
 				DBPFFile dbpf = new DBPFFile(filePath);
@@ -137,7 +140,8 @@ namespace SC4ModManager {
 
 					//Add all Base/Overlay textures. Look at the least significant 4 bits and only add if it is 0, 5, or A: And the Instance by 0b1111 (0xF) and check the modulus result.
 					if (entry.MatchesKnownEntryType(DBPFTGI.FSH_BASE_OVERLAY) && ((entry.TGI.Instance & 0xF) % 5) == 0) {
-						allTGIs.Add(new PropTexture { FilePath = filePath, TGI = entry.TGI.ToString(), ExemplarName = "" });
+						//allTGIs.Add(new PropTexture { FilePath = filePath, TGI = entry.TGI.ToString(), ExemplarName = "" });
+						db.AddTGI(filePath, entry.TGI.ToString(), null);
 					}
 
 					//Add all Exemplars
@@ -146,7 +150,8 @@ namespace SC4ModManager {
 						DBPFProperty p = entry.GetProperty("ExemplarName");
 						p.DecodeValues();
 						exName = (string) p.DecodedValues.GetValue(0); //Decoded value of exemplar name is a string array of length 1
-						allTGIs.Add(new PropTexture { FilePath = filePath, TGI = entry.TGI.ToString(), ExemplarName = exName });
+						//allTGIs.Add(new PropTexture { FilePath = filePath, TGI = entry.TGI.ToString(), ExemplarName = exName });
+						db.AddTGI(filePath, entry.TGI.ToString(), exName);
 					}
 
 					//Add all Cohorts. Note the Building/prop family of the Cohort is always 0x10000000 less than the Cohort's Index.
@@ -159,12 +164,13 @@ namespace SC4ModManager {
 						DBPFProperty p = entry.GetProperty("ExemplarName");
 						p.DecodeValues();
 						exName = (string) p.DecodedValues.GetValue(0); //Decoded value of exemplar name is a string array of length 1
-						allTGIs.Add(new PropTexture { FilePath = filePath, TGI = family.ToString(), ExemplarName = exName });
+						//allTGIs.Add(new PropTexture { FilePath = filePath, TGI = family.ToString(), ExemplarName = exName });
+						db.AddTGI(filePath, entry.TGI.ToString(), exName);
 					}
 
 				}
 			}
-			WriteListToCSV(allTGIs, PropTextureCSVPath);
+			//WriteListToCSV(allTGIs, PropTextureCSVPath);
 		}
 		/// <summary>
 		/// Simple helper class to hold fields for writing TGIs to CSV file.
