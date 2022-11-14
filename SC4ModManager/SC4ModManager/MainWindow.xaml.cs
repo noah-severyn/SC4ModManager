@@ -42,13 +42,12 @@ namespace SC4ModManager {
 
 		public MainWindow() {
 			InitializeComponent();
-			string[] files = Directory.GetFiles(AllDeps, "*", SearchOption.TopDirectoryOnly);
-			List<string> dbpfFiles = new List<string>();
-			foreach (string file in files) {
-				if (DBPFUtil.IsFileDBPF(file)) {
-					dbpfFiles.Add(file);
-				}
-			}
+			IEnumerable<string> files = Directory.EnumerateFiles(AllDeps, "*", SearchOption.TopDirectoryOnly);
+			List<string> allFiles = new List<string>(files);
+
+			(List<FileInfo> dbpfFiles, List<FileInfo> skippedFiles) = DBPFUtil.FilterDBPFFiles(allFiles,true);
+
+
 
 			//Analysis.GetRep13IIDs(dbpfFiles); //creates "rep13IIDs.csv"
 

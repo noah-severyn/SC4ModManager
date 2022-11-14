@@ -8,7 +8,7 @@ using System.Text;
 using csDBPF;
 using csDBPF.Properties;
 using System.Linq;
-using System.Windows.Documents;
+using System.Diagnostics;
 
 namespace SC4ModManager {
 	public static class Analysis {
@@ -23,7 +23,7 @@ namespace SC4ModManager {
 
 			//Loop through each file
 			foreach (string filePath in dbpfFiles) {
-				DBPFFile dbpf = new DBPFFile(filePath);
+				DBPFFile dbpf = DBPFFile.CreateIfValidDBPF(new FileInfo(filePath));
 				List<DBPFEntry> listOfEntries = dbpf.ListOfEntries;
 
 				//Loop through each subfile
@@ -85,7 +85,7 @@ namespace SC4ModManager {
 			List<TGIs> allTGIs = new List<TGIs>();
 
 			foreach (string filePath in dbpfFiles) {
-				DBPFFile dbpf = new DBPFFile(filePath);
+				DBPFFile dbpf = DBPFFile.CreateIfValidDBPF(new FileInfo(filePath));
 				foreach (DBPFTGI tgi in dbpf.ListOfTGIs) {
 
 					//Add all Base/Overlay textures. Look at the least significant 4 bits and only add if it is 0, 5, or A: And the Instance by 0b1111 (0xF) and check the modulus result.
@@ -122,72 +122,57 @@ namespace SC4ModManager {
 
 
 		#region PropTextureCatalog
-		private const string PropTextureCSVPath = "C:\\Users\\Administrator\\OneDrive\\Documents\\Repositories\\SC4PropTextureCatalog\\resources\\PropTextTGIs.csv";
+		//TODO - FilePath should be a FileIdentifier instead:
+		//the path can change, filename can change - what will remain constant such that a file will be recognized even if it is edited - or do we care?
+		//possibly be some sort of combination of the date created unix timestamp, and first n and last n rows in the DIR table?
+
+		//ORRRRR do we not care at all, and just directly look at the TGIs contained in an upload by STEX and LEX id and use those as the identifiers <<<<<<<<<<<<<<
+
+		//index offset in the header might be a good measurement to tell if a file has been modified or not (but we have date modified so ????)
+
+
 		/// <summary>
 		/// Generates a CSV file of all TGIs.
 		/// </summary>
 		/// <param name="dbpfFiles">List of file paths to iterate through</param>
-		public static void GenerateMainPropTextureCatalogList(List<string> dbpfFiles) {
-			//List<PropTexture> allTGIs = new List<PropTexture>();
+		public static void GenerateMainPropTextureCatalogList(List<FileInfo> dbpfFiles) {
 			string exName;
 
 			var db = new Catalog.DatabaseHandler("C:\\Users\\Administrator\\Desktop\\");
 
-
-			foreach (string filePath in dbpfFiles) {
-				DBPFFile dbpf = new DBPFFile(filePath);
+			foreach (FileInfo file in dbpfFiles) {
+				Debug.WriteLine(file.Name);
+				DBPFFile dbpf = DBPFFile.CreateIfValidDBPF(file);
 				foreach (DBPFEntry entry in dbpf.ListOfEntries) {
 
 					//Add all Base/Overlay textures. Look at the least significant 4 bits and only add if it is 0, 5, or A: And the Instance by 0b1111 (0xF) and check the modulus result.
 					if (entry.MatchesKnownEntryType(DBPFTGI.FSH_BASE_OVERLAY) && ((entry.TGI.Instance & 0xF) % 5) == 0) {
-						//allTGIs.Add(new PropTexture { FilePath = filePath, TGI = entry.TGI.ToString(), ExemplarName = "" });
-						db.AddTGI(filePath, entry.TGI.ToString(), null);
+						db.AddTGI(file.Name, entry.TGI.ToString(), null);
 					}
 
 					//Add all Exemplars
 					else if (entry.MatchesKnownEntryType(DBPFTGI.EXEMPLAR)) {
 						entry.DecodeEntry();
+						if (entry.DecodedData is null) continue;
+
 						DBPFProperty p = entry.GetProperty("ExemplarName");
 						p.DecodeValues();
 						exName = (string) p.DecodedValues.GetValue(0); //Decoded value of exemplar name is a string array of length 1
-						//allTGIs.Add(new PropTexture { FilePath = filePath, TGI = entry.TGI.ToString(), ExemplarName = exName });
-						db.AddTGI(filePath, entry.TGI.ToString(), exName);
+						db.AddTGI(file.Name, entry.TGI.ToString(), exName);
 					}
 
 					//Add all Cohorts. Note the Building/prop family of the Cohort is always 0x10000000 less than the Cohort's Index.
 					else if (entry.MatchesKnownEntryType(DBPFTGI.COHORT)) {
 						DBPFTGI family = new DBPFTGI((uint) entry.TGI.Type, (uint) entry.TGI.Group, (uint) (entry.TGI.Instance - 0x10000000));
 						entry.DecodeEntry();
-						if (entry.DecodedData is null) {
-							continue;
-						}
+						if (entry.DecodedData is null) continue;
+
 						DBPFProperty p = entry.GetProperty("ExemplarName");
 						p.DecodeValues();
 						exName = (string) p.DecodedValues.GetValue(0); //Decoded value of exemplar name is a string array of length 1
-						//allTGIs.Add(new PropTexture { FilePath = filePath, TGI = family.ToString(), ExemplarName = exName });
-						db.AddTGI(filePath, entry.TGI.ToString(), exName);
+						db.AddTGI(file.Name, entry.TGI.ToString(), exName);
 					}
-
 				}
-			}
-			//WriteListToCSV(allTGIs, PropTextureCSVPath);
-		}
-		/// <summary>
-		/// Simple helper class to hold fields for writing TGIs to CSV file.
-		/// </summary>
-		private class PropTexture {
-			public string FilePath { get; set; }
-			//TODO - FilePath should be a FileIdentifier instead:
-			//the path can change, filename can change - what will remain constant such that a file will be recognized even if it is edited - or do we care?
-			//possibly be some sort of combination of the date created unix timestamp, and first n and last n rows in the DIR table?
-
-			//ORRRRR do we not care at all, and just directly look at the TGIs contained in an upload by STEX and LEX id and use those as the identifiers <<<<<<<<<<<<<<
-
-			//index offset in the header might be a good measurement to tell if a file has been modified or not (but we have date modified so ????)
-			public string TGI { get; set; }
-			public string ExemplarName { get; set; }
-			public override string ToString() {
-				return $"{FilePath}, {TGI}, {ExemplarName}";
 			}
 		}
 		#endregion PropTextureCatalog
@@ -203,7 +188,7 @@ namespace SC4ModManager {
 			List<BuildingList> bldgList = new List<BuildingList>();
 
 			foreach (string filePath in dbpfFiles) {
-				DBPFFile file = new DBPFFile(filePath);
+				DBPFFile file = DBPFFile.CreateIfValidDBPF(new FileInfo(filePath));
 				file.DecodeAllEntries();
 
 				//In a DBPF file, the indicies of TGIs corresponds dicrectly to the indicies of Entries
