@@ -153,7 +153,7 @@ namespace SC4ModManager {
 					//Add all Exemplars
 					else if (entry.MatchesKnownEntryType(DBPFTGI.EXEMPLAR)) {
 						entry.DecodeEntry();
-						if (entry.DecodedData is null) continue;
+						if (entry.ListOfProperties.Count == 0) continue;
 
 						DBPFProperty p = entry.GetProperty("ExemplarName");
 						p.DecodeValues();
@@ -165,7 +165,7 @@ namespace SC4ModManager {
 					else if (entry.MatchesKnownEntryType(DBPFTGI.COHORT)) {
 						DBPFTGI family = new DBPFTGI((uint) entry.TGI.Type, (uint) entry.TGI.Group, (uint) (entry.TGI.Instance - 0x10000000));
 						entry.DecodeEntry();
-						if (entry.DecodedData is null) continue;
+						if (entry.ListOfProperties.Count == 0) continue;
 
 						DBPFProperty p = entry.GetProperty("ExemplarName");
 						p.DecodeValues();
