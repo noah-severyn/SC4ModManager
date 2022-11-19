@@ -53,11 +53,15 @@ namespace SC4ModManager {
 
 			//Analysis.GetTGIs(dbpfFiles); //creates "foundTGIs.csv"
 
-			Analysis.GenerateMainPropTextureCatalogList(dbpfFiles); //creates "depTGIs.csv"
+			//Analysis.GenerateMainPropTextureCatalogList(dbpfFiles); //creates "depTGIs.csv"
 
 			//LEX_Access.AccessLEXFileInfo(2987);
 
 			//Analysis.GenerateLotListTables(dbpfFiles);
-		}
+
+			//var db = new DatabaseBuilder.DatabaseHandler("C:\\Users\\Administrator\\OneDrive\\Documents\\SC4ModManager\\SC4ModManager\\SC4ModManager\\");
+
+			var dbu = new DatabaseUser();
+        }
 	}
 }

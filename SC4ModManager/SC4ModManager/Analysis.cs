@@ -138,7 +138,7 @@ namespace SC4ModManager {
 		public static void GenerateMainPropTextureCatalogList(List<FileInfo> dbpfFiles) {
 			string exName;
 
-			var db = new Catalog.DatabaseHandler("C:\\Users\\Administrator\\Desktop\\");
+			var db = new DatabaseBuilder.DatabaseHandler("C:\\Users\\Administrator\\Desktop\\");
 
 			foreach (FileInfo file in dbpfFiles) {
 				Debug.WriteLine(file.Name);
