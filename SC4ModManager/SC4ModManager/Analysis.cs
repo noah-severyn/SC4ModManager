@@ -179,21 +179,21 @@ namespace SC4ModManager {
 
 
 		#region LotList
-		private const string LotListCSVPath = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\working\\LotList.csv";
-		private const string BldgListCSVPath = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\working\\BldgList.csv";
+		private const string LotListCSVPath = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\IRM\\LotList.csv";
+		private const string BldgListCSVPath = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\IRM\\BldgList.csv";
 		//scan exemplars for lot size, growth stage, lot name, jmyers
-		public static void GenerateLotListTables(List<string> dbpfFiles) {
+		public static void GenerateLotListTables(List<FileInfo> dbpfFiles) {
 			//create a new dictionary to store the scanned lot items
 			List<LotList> lotList = new List<LotList>();
 			List<BuildingList> bldgList = new List<BuildingList>();
 
-			foreach (string filePath in dbpfFiles) {
-				DBPFFile file = DBPFFile.CreateIfValidDBPF(new FileInfo(filePath));
-				file.DecodeAllEntries();
+			foreach (FileInfo file in dbpfFiles) {
+				DBPFFile dbpf = DBPFFile.CreateIfValidDBPF(file);
+				dbpf.DecodeAllEntries();
 
 				//In a DBPF file, the indicies of TGIs corresponds dicrectly to the indicies of Entries
 				//Filter down list of entries to only target the desired ones using LINQ
-				var filteredEntries = from entry in file.ListOfEntries
+				var filteredEntries = from entry in dbpf.ListOfEntries
 									  where entry.MatchesKnownEntryType(DBPFTGI.EXEMPLAR)
 									  select entry;
 
@@ -204,16 +204,13 @@ namespace SC4ModManager {
 					if (entry.GetExemplarType() == (int) DBPFProperty.ExemplarTypes.LotConfiguration) {
 						entry.DecodeAllProperties();
 
-
-
-
 						LotList listItem = new LotList();
 						listItem.Name = (string) entry.GetProperty("Exemplar Name").DecodedValues.GetValue(0);
 						listItem.Stage = (byte) entry.GetProperty("Growth Stage").DecodedValues.GetValue(0);
 						listItem.LotSizeX = (byte) entry.GetProperty("LotConfigPropertySize").DecodedValues.GetValue(0);
 						listItem.LotSizeY = (byte) entry.GetProperty("LotConfigPropertySize").DecodedValues.GetValue(1);
 
-
+						//TOdo - for some reason this does not return the correct result
 						DBPFProperty prop = entry.GetProperty(0x88edc900);
 						Array vals = Array.CreateInstance(prop.DataType.PrimitiveDataType,prop.NumberOfReps);
 						vals = prop.DecodedValues;

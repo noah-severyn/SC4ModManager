@@ -37,12 +37,12 @@ namespace SC4ModManager {
 		private readonly string STEX_Sample = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\STEX Entries Sample - 2021.10.22\\Files";
 		private readonly string FINAL = "C:\\Users\\Administrator\\OneDrive\\FINAL";
 
-		private readonly string tempfolder = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps\\test";
+		private readonly string tempfolder = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\IRM";
 
 
 		public MainWindow() {
 			InitializeComponent();
-			IEnumerable<string> files = Directory.EnumerateFiles(AllDeps, "*", SearchOption.TopDirectoryOnly);
+			IEnumerable<string> files = Directory.EnumerateFiles(tempfolder, "*", SearchOption.AllDirectories);
 			List<string> allFiles = new List<string>(files);
 
 			(List<FileInfo> dbpfFiles, List<FileInfo> skippedFiles) = DBPFUtil.FilterDBPFFiles(allFiles,true);
@@ -57,11 +57,11 @@ namespace SC4ModManager {
 
 			//LEX_Access.AccessLEXFileInfo(2987);
 
-			//Analysis.GenerateLotListTables(dbpfFiles);
+			Analysis.GenerateLotListTables(dbpfFiles);
 
 			//var db = new DatabaseBuilder.DatabaseHandler("C:\\Users\\Administrator\\OneDrive\\Documents\\SC4ModManager\\SC4ModManager\\SC4ModManager\\");
 
-			var dbu = new DatabaseUser();
+			//var dbu = new DatabaseUser();
         }
 	}
 }
