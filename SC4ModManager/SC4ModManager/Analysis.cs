@@ -12,6 +12,8 @@ using System.Diagnostics;
 
 namespace SC4ModManager {
 	public static class Analysis {
+
+		//Creates rep13IIDs: {ParentTGI}, {Rep0IID}, 0x{Rep13IID}
 		#region Rep13IIDs
 		private const string Rep13sCSVpath = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\rep13IIDs.csv";
 		/// <summary>
@@ -75,6 +77,7 @@ namespace SC4ModManager {
 		#endregion Rep13IIDs
 
 
+		//Creates foundTGIs CSV: {FilePath}, {TGI}
 		#region GetTGIs
 		private const string TGIsCSVpath = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\foundTGIs.csv";
 		/// <summary>
@@ -121,6 +124,7 @@ namespace SC4ModManager {
 		#endregion GetTGIs
 
 
+		//Uses DatabaseBuilder class to write SQLite db
 		#region PropTextureCatalog
 		//TODO - FilePath should be a FileIdentifier instead:
 		//the path can change, filename can change - what will remain constant such that a file will be recognized even if it is edited - or do we care?
@@ -178,6 +182,8 @@ namespace SC4ModManager {
 		#endregion PropTextureCatalog
 
 
+		//Creates LotList CSV: {RCIType}, {Stage}, {LotSizeX}x{LotSizeY}, {BuildingInstance}, {Name}";
+		//Also creates BldgList CSV: {Instance}, {BuildingName}, {Tilesets}
 		#region LotList
 		private const string LotListCSVPath = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\IRM\\LotList.csv";
 		private const string BldgListCSVPath = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\IRM\\BldgList.csv";
