@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Diagnostics;
 using SQLite;
-using SQLitePCL;
 using System.IO;
-using Microsoft.Data.Sqlite;
 
 namespace SC4ModManager {
     /// <summary>

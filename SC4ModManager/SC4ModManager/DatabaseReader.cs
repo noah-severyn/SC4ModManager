@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Text;
 using System.IO;
-using Microsoft.Data.Sqlite;
-using System.Reflection;
 using SQLite;
 
 namespace SC4ModManager {
