@@ -42,10 +42,10 @@ namespace SC4ModManager {
 
 		public MainWindow() {
 			InitializeComponent();
-			IEnumerable<string> files = Directory.EnumerateFiles(tempfolder, "*", SearchOption.AllDirectories);
-			List<string> allFiles = new List<string>(files);
+			//IEnumerable<string> files = Directory.EnumerateFiles(tempfolder, "*", SearchOption.AllDirectories);
+			//List<string> allFiles = new List<string>(files);
 
-			(List<FileInfo> dbpfFiles, List<FileInfo> skippedFiles) = DBPFUtil.FilterDBPFFiles(allFiles,true);
+			//(List<FileInfo> dbpfFiles, List<FileInfo> skippedFiles) = DBPFUtil.FilterDBPFFiles(allFiles,true);
 
 
 
@@ -57,11 +57,12 @@ namespace SC4ModManager {
 
 			//LEX_Access.AccessLEXFileInfo(2987);
 
-			Analysis.GenerateLotListTables(dbpfFiles);
+			//Analysis.GenerateLotListTables(dbpfFiles);
 
 			//var db = new DatabaseBuilder.DatabaseHandler("C:\\Users\\Administrator\\OneDrive\\Documents\\SC4ModManager\\SC4ModManager\\SC4ModManager\\");
 
-			//var dbu = new DatabaseUser();
+			var reader = new DatabaseReader();
+			reader.GetRecords();
         }
 	}
 }
