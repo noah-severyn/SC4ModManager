@@ -20,19 +20,13 @@ namespace SC4ModManager {
         private SQLiteConnection _conn;
 
         public DatabaseReader() {
-            string path = "C:\\Users\\Administrator\\OneDrive\\Documents\\SC4ModManager\\SC4ModManager\\SC4ModManager\\Catalog.db";
+            string path = Path.Combine(Directory.GetCurrentDirectory(), "Catalog.db");
             if (!File.Exists(path)) {
                 throw new Exception();
             }
-            _conn = InitialiseConnection();
+            SQLiteConnectionString options = new SQLiteConnectionString(path, false);
+            _conn=  new SQLiteConnection(options);
         }
-
-        private SQLiteConnection InitialiseConnection() {
-            var DataSource = "C:\\Users\\Administrator\\OneDrive\\Documents\\SC4ModManager\\SC4ModManager\\SC4ModManager\\Catalog.db";
-            SQLiteConnectionString options = new SQLiteConnectionString(DataSource, false);
-            return new SQLiteConnection(options);
-
-		}
 
         public void GetRecords() {
 			string search = "7abc";
