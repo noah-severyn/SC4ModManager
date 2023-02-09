@@ -26,10 +26,10 @@ namespace SC4ModManager {
 
 			//Loop through each file
 			foreach (string filePath in dbpfFiles) {
-				DBPFFile dbpf = DBPFFile.CreateIfValidDBPF(new FileInfo(filePath));
-				List<DBPFEntryEXMP> exemplars = from entry in dbpf.GetEntries()
+				DBPFFile dbpf = new DBPFFile(filePath);
+				List<DBPFEntryEXMP> exemplars = (List<DBPFEntryEXMP>) (from entry in dbpf.GetEntries()
 												where entry.MatchesKnownEntryType(DBPFTGI.EXEMPLAR)
-												select entry;
+												select entry);
 
                 //Loop through each subfile
                 foreach (DBPFEntryEXMP entry in exemplars) {
@@ -47,10 +47,10 @@ namespace SC4ModManager {
                     foreach (DBPFProperty property in entry.ListOfProperties.Values) {
                         //LotConfigPropertyLotObjectData must be between 0x88edc900 and 0x88edce00 - first one is 0x88edc900 and can continue on for max 1280 repetitions total
                         if (property.ID >= 0x88edc900 && property.ID <= 0x88edce00) {
-							List<long> lotObjects = property.GetDataValues();
+							List<long> lotObjects = (List<long>) property.GetData();
 
-							//First rep determines the type. We want to add only if it is 0x0 (building) or 0x1 (prop) or 0x2 (texture) or 0x4 (flora)
-							uint lotObjectType = (uint) lotObjects[0];
+                            //First rep determines the type. We want to add only if it is 0x0 (building) or 0x1 (prop) or 0x2 (texture) or 0x4 (flora)
+                            uint lotObjectType = (uint) lotObjects[0];
                             if (lotObjectType == (int) DBPFProperty.LotConfigPropertyLotObjectTypes.Building || lotObjectType == (int) DBPFProperty.LotConfigPropertyLotObjectTypes.Prop ||
                                 lotObjectType == (int) DBPFProperty.LotConfigPropertyLotObjectTypes.Texture || lotObjectType == (int) DBPFProperty.LotConfigPropertyLotObjectTypes.Flora) {
                                 listOfRep13IIDs.Add(new Rep13IIDs { ParentTGI = entry.TGI.ToString(), Rep0IID = lotObjectType, Rep13IID = (uint) lotObjects[12] });
@@ -71,7 +71,7 @@ namespace SC4ModManager {
 			public uint Rep13IID { get; set; }
 
 			public override string ToString() {
-				return $"{ParentTGI}, {Rep0IID}, 0x{DBPFUtil.UIntToHexString(Rep13IID)}";
+				return $"{ParentTGI}, {Rep0IID}, 0x{DBPFUtil.ToHexString(Rep13IID)}";
 			}
 		}
 		#endregion Rep13IIDs
@@ -88,7 +88,7 @@ namespace SC4ModManager {
 			List<TGIs> allTGIs = new List<TGIs>();
 
 			foreach (string filePath in dbpfFiles) {
-				DBPFFile dbpf = DBPFFile.CreateIfValidDBPF(new FileInfo(filePath));
+				DBPFFile dbpf = new DBPFFile(filePath);
 				foreach (DBPFTGI tgi in dbpf.GetTGIs()) {
 
 					//Add all Base/Overlay textures. Look at the least significant 4 bits and only add if it is 0, 5, or A: And the Instance by 0b1111 (0xF) and check the modulus result.
@@ -136,22 +136,24 @@ namespace SC4ModManager {
 
 
 		/// <summary>
-		/// Generates a CSV file of all TGIs.
+		/// Creates a SQLite DB of props and lot textures from the list of files.
 		/// </summary>
 		/// <param name="dbpfFiles">List of file paths to iterate through</param>
-		public static void GenerateMainPropTextureCatalogList(List<FileInfo> dbpfFiles) {
+		public static void GeneratePropTextureCatalogDB(List<FileInfo> dbpfFiles) {
 			string exName;
+            DBPFEntryEXMP exmp;
+			DBPFFile dbpf;
+			DBPFTGI family;
+			DBPFProperty prop;
+            var db = new DatabaseBuilder("C:\\source\\repos\\SC4ModManager\\SC4ModManager\\SC4ModManager");
 
-			var db = new DatabaseBuilder.DatabaseHandler("C:\\Users\\Administrator\\Desktop\\");
-			DBPFEntryEXMP exmp;
-
-			foreach (FileInfo file in dbpfFiles) {
+            foreach (FileInfo file in dbpfFiles) {
 				Debug.WriteLine(file.Name);
-				DBPFFile dbpf = DBPFFile.CreateIfValidDBPF(file);
+				dbpf = new DBPFFile(file);
 				foreach (DBPFEntry entry in dbpf.GetEntries()) {
 
 					//Add all Base/Overlay textures. Look at the least significant 4 bits and only add if it is 0, 5, or A: And the Instance by 0b1111 (0xF) and check the modulus result.
-					if (entry.MatchesKnownEntryType(DBPFTGI.FSH_BASE_OVERLAY) && ((entry.TGI.Instance & 0xF) % 5) == 0) {
+					if (entry.MatchesKnownEntryType(DBPFTGI.FSH_BASE_OVERLAY) && ((entry.TGI.InstanceID & 0xF) % 5) == 0) {
 						db.AddTGI(file.Name, entry.TGI.ToString(), null);
 					}
 
@@ -161,23 +163,20 @@ namespace SC4ModManager {
 						entry.DecodeEntry();
 						if (exmp.ListOfProperties.Count == 0) continue;
 
-						DBPFProperty p = exmp.GetProperty("ExemplarName");
-						var values = p.GetDataValues();
-						exName = (string) values; //Decoded value of exemplar name is a string array of length 1
-						db.AddTGI(file.Name, exmp.TGI.ToString(), exName);
+						prop = exmp.GetProperty("ExemplarName");
+                        exName = (string) prop.GetData();
+                        db.AddTGI(file.Name, exmp.TGI.ToString(), exName);
 					}
 
 					//Add all Cohorts. Note the Building/prop family of the Cohort is always 0x10000000 less than the Cohort's Index.
 					else if (entry.MatchesKnownEntryType(DBPFTGI.COHORT)) {
                         exmp = (DBPFEntryEXMP) entry;
-                        DBPFTGI family = new DBPFTGI((uint) entry.TGI.Type, (uint) entry.TGI.Group, (uint) (entry.TGI.Instance - 0x10000000));
+                        family = new DBPFTGI((uint) entry.TGI.TypeID, (uint) entry.TGI.GroupID, (uint) (entry.TGI.InstanceID - 0x10000000));
 						entry.DecodeEntry();
 						if (exmp.ListOfProperties.Count == 0) continue;
 
-						DBPFProperty p = exmp.GetProperty("ExemplarName");
-                        var values = p.GetDataValues();
-                        exName = (string) values; //Decoded value of exemplar name is a string array of length 1
-						db.AddTGI(file.Name, entry.TGI.ToString(), exName);
+                        exName = (string) exmp.GetProperty("ExemplarName").GetData();
+                        db.AddTGI(file.Name, entry.TGI.ToString(), exName);
 					}
 				}
 			}
@@ -197,14 +196,14 @@ namespace SC4ModManager {
 			List<BuildingList> bldgList = new List<BuildingList>();
 
 			foreach (FileInfo file in dbpfFiles) {
-				DBPFFile dbpf = DBPFFile.CreateIfValidDBPF(file);
-				dbpf.DecodeAllEntries();
+				DBPFFile dbpf = new DBPFFile(file);
+                dbpf.DecodeAllEntries();
 
-				//In a DBPF file, the indicies of TGIs corresponds dicrectly to the indicies of Entries
-				//Filter down list of entries to only target the desired ones using LINQ
-				List<DBPFEntryEXMP> filteredEntries = from entry in dbpf.GetEntries()
+                //In a DBPF file, the indicies of TGIs corresponds dicrectly to the indicies of Entries
+                //Filter down list of entries to only target the desired ones using LINQ
+                List<DBPFEntryEXMP> filteredEntries = (List<DBPFEntryEXMP>) (from entry in dbpf.GetEntries()
 									  where entry.MatchesKnownEntryType(DBPFTGI.EXEMPLAR)
-									  select entry;
+									  select entry);
 
 				foreach (DBPFEntryEXMP entry in filteredEntries) {
 					entry.DecodeEntry();
@@ -213,26 +212,26 @@ namespace SC4ModManager {
 					if (entry.GetExemplarType() == (int) DBPFProperty.ExemplarTypes.LotConfiguration) {
 
 						LotList listItem = new LotList();
-						listItem.Name = (string) entry.GetProperty("Exemplar Name");
-						listItem.Stage = (byte) entry.GetProperty("Growth Stage")[0];
-						listItem.LotSizeX = (byte) entry.GetProperty("LotConfigPropertySize")[0];
-                        listItem.LotSizeY = (byte) entry.GetProperty("LotConfigPropertySize")[1];
+						listItem.Name = (string) entry.GetProperty("Exemplar Name").GetData();
+						listItem.Stage = (byte) entry.GetProperty("Growth Stage").GetData(0);
+						listItem.LotSizeX = (byte) entry.GetProperty("LotConfigPropertySize").GetData(0);
+                        listItem.LotSizeY = (byte) entry.GetProperty("LotConfigPropertySize").GetData(0);
 
                         //TOdo - for some reason this does not return the correct result
                         DBPFProperty prop = entry.GetProperty(0x88edc900);
 						if (prop is null) {
 							continue;
 						}
-						listItem.BuildingInstance = (uint) prop.GetDataValues()[12];
+						listItem.BuildingInstance = (uint) prop.GetData(12);
 
-						prop = entry.GetProperty("LotConfigPropertyPurposeTypes");
+                        prop = entry.GetProperty("LotConfigPropertyPurposeTypes");
 						if (prop is null) {
 							continue;
 						}
 						if (prop.NumberOfReps == 0) { //have to account for some properties that might not have any values set
 							continue;
 						}
-						int purposeType = (byte) prop.GetDataValues()[0];
+						int purposeType = (byte) prop.GetData(0);
                         switch (purposeType) {
 							case 1:
 								listItem.RCIType = "R";
@@ -259,8 +258,8 @@ namespace SC4ModManager {
 								break;
 						}
 
-						int wealthType = (byte) entry.GetProperty("LotConfigPropertyWealthTypes").DecodedValues.GetValue(0);
-						string wealth = new string('$', wealthType);
+						int wealthType = (byte) entry.GetProperty("LotConfigPropertyWealthTypes").GetData(0);
+                        string wealth = new string('$', wealthType);
 						listItem.RCIType += wealth;
 
 						lotList.Add(listItem);
@@ -270,14 +269,14 @@ namespace SC4ModManager {
 					else if (entry.GetExemplarType() == (int) DBPFProperty.ExemplarTypes.Building) {
 
 						BuildingList bldgItem = new BuildingList();
-						bldgItem.BuildingName = (string) entry.GetProperty("Exemplar Name").DecodedValues.GetValue(0);
-						bldgItem.Instance = (uint) entry.TGI.Instance;
+						bldgItem.BuildingName = (string) entry.GetProperty("Exemplar Name").GetData();
+                        bldgItem.Instance = (uint) entry.TGI.InstanceID;
 
 						DBPFProperty prop = entry.GetProperty("OccupantGroups");
 						if (prop is null) { //no guarantee that a building will have this property (it could be in a cohort)
 							continue;
 						}
-						var vals = (List<long>) prop.GetDataValues();
+						var vals = (List<long>) prop.GetData();
 						bldgItem.Tilesets = ArrayToString(vals);
 						bldgList.Add(bldgItem);
 					}
@@ -292,7 +291,7 @@ namespace SC4ModManager {
 			StringBuilder sb = new StringBuilder();
 			foreach (uint item in vals) {
 				if (item >= 0x2000 && item <= 0x2003) {
-					sb.Append(DBPFUtil.UIntToHexString(item, 4) + ";");
+					sb.Append(DBPFUtil.ToHexString(item, 4) + ";");
 				}
 				
 			}
@@ -308,7 +307,7 @@ namespace SC4ModManager {
 			public uint BuildingInstance { get; set; }
 
 			public override string ToString() {
-				return $"{RCIType}, {Stage}, {LotSizeX}x{LotSizeY}, {DBPFUtil.UIntToHexString(BuildingInstance)}, {Name}";
+				return $"{RCIType}, {Stage}, {LotSizeX}x{LotSizeY}, {DBPFUtil.ToHexString(BuildingInstance)}, {Name}";
 			}
 		}
 
@@ -318,7 +317,7 @@ namespace SC4ModManager {
 			public string Tilesets { get; set; }
 
 			public override string ToString() {
-				return $"{DBPFUtil.UIntToHexString(Instance)}, {BuildingName}, {Tilesets}";
+				return $"{DBPFUtil.ToHexString(Instance)}, {BuildingName}, {Tilesets}";
 			}
 
 		}

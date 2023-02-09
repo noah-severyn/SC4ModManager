@@ -5,18 +5,22 @@ using System.IO;
 using SQLite;
 
 namespace SC4ModManager {
+    /// <summary>
+    /// An item representing a record in the Prop Texture catalog table.
+    /// </summary>
+    [Table("records")]
+    public class Record {
+        public string Title { get; set; }
+        public string TGI { get; set; }
+        public string Author { get; set; }
+        public string ExmpName { get; set; }
+    }
+
+
+    /// <summary>
+    /// Open and process the Prop Texture Catalog database.
+    /// </summary>
     public class DatabaseReader {
-        [Table("records")]
-        public class Record {
-            public string Title { get; set; }
-            public string TGI { get; set; }
-            public string Author { get; set; }
-            public string ExmpName { get; set; }
-        }
-
-
-
-
         private SQLiteConnection _conn;
 
         public DatabaseReader() {

@@ -37,23 +37,21 @@ namespace SC4ModManager {
 		private readonly string STEX_Sample = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\STEX Entries Sample - 2021.10.22\\Files";
 		private readonly string FINAL = "C:\\Users\\Administrator\\OneDrive\\FINAL";
 
-		private readonly string tempfolder = "C:\\Users\\Administrator\\Documents\\SimCity 4\\Plugins\\IRM";
-
 
 		public MainWindow() {
 			InitializeComponent();
-			//IEnumerable<string> files = Directory.EnumerateFiles(tempfolder, "*", SearchOption.AllDirectories);
-			//List<string> allFiles = new List<string>(files);
-
-			//(List<FileInfo> dbpfFiles, List<FileInfo> skippedFiles) = DBPFUtil.FilterDBPFFiles(allFiles,true);
-
+			IEnumerable<string> files = Directory.EnumerateFiles(AllDeps, "*", SearchOption.TopDirectoryOnly);
+			List<string> allFiles = new List<string>(files);
+			List<FileInfo> dbpfFiles;
+			List<FileInfo> skippedFiles;
+            (dbpfFiles, skippedFiles) = DBPFUtil.FilterDBPFFiles(allFiles,true);
 
 
 			//Analysis.GetRep13IIDs(dbpfFiles); //creates "rep13IIDs.csv"
 
 			//Analysis.GetTGIs(dbpfFiles); //creates "foundTGIs.csv"
 
-			//Analysis.GenerateMainPropTextureCatalogList(dbpfFiles); //creates "depTGIs.csv"
+			Analysis.GeneratePropTextureCatalogDB(dbpfFiles); //creates SQLite DB
 
 			//LEX_Access.AccessLEXFileInfo(2987);
 
@@ -61,8 +59,8 @@ namespace SC4ModManager {
 
 			//var db = new DatabaseBuilder.DatabaseHandler("C:\\Users\\Administrator\\OneDrive\\Documents\\SC4ModManager\\SC4ModManager\\SC4ModManager\\");
 
-			var reader = new DatabaseReader();
-			reader.GetRecords();
+			//var reader = new DatabaseReader();
+			//reader.GetRecords();
         }
 	}
 }
