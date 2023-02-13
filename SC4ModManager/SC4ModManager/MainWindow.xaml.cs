@@ -34,7 +34,7 @@ namespace SC4ModManager {
 
 		private readonly string B62Files = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\B62\\b62 unzipped";
 		private readonly string AllDeps = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps";
-		private readonly string STEX_Sample = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\STEX Entries Sample - 2021.10.22\\Files";
+        private readonly string STEX_Sample = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\STEX Entries Sample - 2021.10.22\\Files";
 		private readonly string FINAL = "C:\\Users\\Administrator\\OneDrive\\FINAL";
 
 

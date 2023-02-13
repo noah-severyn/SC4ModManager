@@ -128,14 +128,14 @@ namespace SC4ModManager {
 
             //once we know our pathitem (if it already exists) we can then add the new tgi with that pathitem
             //but first check if this item already exists
-            if (!DoesTGIExist(tgi)) {
+            //if (!DoesTGIExist(tgi)) {
                 TGIItem newTGI = new TGIItem {
                     PathID = pathID,
                     TGI = tgi,
                     ExemplarName = exmpName
                 };
                 _db.Insert(newTGI);
-            }
+            //}
         }
 
 

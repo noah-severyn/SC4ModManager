@@ -154,7 +154,7 @@ namespace SC4ModManager {
 
 					//Add all Base/Overlay textures. Look at the least significant 4 bits and only add if it is 0, 5, or A: And the Instance by 0b1111 (0xF) and check the modulus result.
 					if (entry.MatchesKnownEntryType(DBPFTGI.FSH_BASE_OVERLAY) && ((entry.TGI.InstanceID & 0xF) % 5) == 0) {
-						db.AddTGI(file.Name, entry.TGI.ToString(), null);
+						db.AddTGI(file.Name, entry.TGI.ToString().Substring(0, 34), null);
 					}
 
 					//Add all Exemplars
@@ -165,7 +165,7 @@ namespace SC4ModManager {
 
 						prop = exmp.GetProperty("ExemplarName");
                         exName = (string) prop.GetData();
-                        db.AddTGI(file.Name, exmp.TGI.ToString(), exName);
+                        db.AddTGI(file.Name, exmp.TGI.ToString().Substring(0, 34), exName);
 					}
 
 					//Add all Cohorts. Note the Building/prop family of the Cohort is always 0x10000000 less than the Cohort's Index.
@@ -176,7 +176,7 @@ namespace SC4ModManager {
 						if (exmp.ListOfProperties.Count == 0) continue;
 
                         exName = (string) exmp.GetProperty("ExemplarName").GetData();
-                        db.AddTGI(file.Name, entry.TGI.ToString(), exName);
+                        db.AddTGI(file.Name, entry.TGI.ToString().Substring(0, 34), exName);
 					}
 				}
 			}
