@@ -102,7 +102,7 @@ namespace SC4ModManager {
             _db = new SQLiteConnection(dbpath);
             if (isFirstInit) {
                 _db.CreateTable<TGIItem>();
-                _db.CreateTable<PathItem>();
+                //_db.CreateTable<PathItem>();
                 _db.CreateTable<PackItem>();
             }
         }
@@ -117,25 +117,28 @@ namespace SC4ModManager {
         /// <remarks>The path in TGITable is stored as a reference to the full path in PathTable. This dramatically reduces file size as the long path string only needs to be stored once.</remarks>
         public void AddTGI(string path, string tgi, string exmpName) {
             //check if we already have a matching pathid, create new pathitem if not, otherwise use found pathid
-            int pathID = GetPathID(path);
-            if (pathID <= 0) {
-                PathItem newPath = new PathItem {
-                    PathName = path
+            int packID = GetPathID(path);
+            if (packID <= 0) {
+                //PathItem newPath = new PathItem {
+                //    PathName = path
+                //};
+                //_db.Insert(newPath);
+                //pathID = newPath.PathID;
+
+                PackItem newPack = new PackItem {
+                    Title = path
                 };
-                _db.Insert(newPath);
-                pathID = newPath.PathID;
+                _db.Insert(newPack);
+                packID = newPack.PackID;
             }
 
-            //once we know our pathitem (if it already exists) we can then add the new tgi with that pathitem
-            //but first check if this item already exists
-            //if (!DoesTGIExist(tgi)) {
-                TGIItem newTGI = new TGIItem {
-                    PathID = pathID,
-                    TGI = tgi,
-                    ExemplarName = exmpName
-                };
-                _db.Insert(newTGI);
-            //}
+            //once we know our pathitem then add the new tgi with that pathitem
+            TGIItem newTGI = new TGIItem {
+                PathID = packID,
+                TGI = tgi,
+                ExemplarName = exmpName
+            };
+            _db.Insert(newTGI);
         }
 
 
