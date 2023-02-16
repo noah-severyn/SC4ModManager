@@ -15,34 +15,20 @@ namespace SC4ModManager {
         [Column("TGIID")]
         public int ID { get; set; }
 
-        [Column("PathID")]
-        public int PathID { get; set; }
+        [Column("PackID")]
+        public int PackID { get; set; }
 
         [Column("TGI")]
         public string TGI { get; set; }
+
+        [Column("TGIType")]
+        public int? TGIType { get; set; }
 
         [Column("ExmpName")]
         public string ExemplarName { get; set; }
 
         public override string ToString() {
-            return $"{ID}, {PathID}, {TGI}, {ExemplarName}";
-        }
-    }
-
-    /// <summary>
-    /// An item in the PathTable, which tracks the file path each PathID maps to.
-    /// </summary>
-    [Table("PathTable")]
-    public class PathItem {
-        [PrimaryKey, AutoIncrement]
-        [Column("PathID")]
-        public int PathID { get; set; }
-
-        [Column("PathName")]
-        public string PathName { get; set; }
-
-        public override string ToString() {
-            return $"{PathID}, {PathName}";
+            return $"{ID}: {PackID}, {TGI}, {TGIType}, {ExemplarName}";
         }
     }
 
@@ -55,8 +41,8 @@ namespace SC4ModManager {
         [Column("PackID")]
         public int PackID { get; set; }
 
-        [Column("Title")]
-        public string Title { get; set; }
+        [Column("PackName")]
+        public string PackName { get; set; }
 
         [Column("Hyperlink")]
         public string Hyperlink { get; set; }
@@ -74,7 +60,24 @@ namespace SC4ModManager {
         public string SecondaryCat { get; set; }
 
         public override string ToString() {
-            return $"{PackID}: {Title}, by {Author}. Type:{Type}, Primary:{PrimaryCat}, Secondary:{SecondaryCat}";
+            return $"{PackID}: {PackName}, by {Author}. Type:{Type}, Primary:{PrimaryCat}, Secondary:{SecondaryCat}";
+        }
+    }
+
+    /// <summary>
+    /// Dimension 
+    /// </summary>
+    [Table("TGITypes")]
+    public class TGICategory {
+        [PrimaryKey, AutoIncrement]
+        [Column("TGIType")]
+        public int TGIType { get; set; }
+
+        [Column("TGIName")]
+        public string TGIName { get; set; }
+
+        public override string ToString() {
+            return $"{TGIType}: {TGIName}";
         }
     }
 
@@ -85,48 +88,46 @@ namespace SC4ModManager {
     /// Create and operate on the Prop Texture Catalog database.
     /// </summary>
     public class DatabaseBuilder {
-        private SQLiteConnection _db;
+        private readonly SQLiteConnection _db;
 
         public DatabaseBuilder(string dbpath) {
             dbpath = Path.Combine(dbpath, "Catalog.db");
-            bool exists = File.Exists(dbpath);
-            bool isFirstInit = !exists;
-
-            //make sure the specified folder + file exists and create if not
-            if (isFirstInit) {
-                var folderPath = Path.GetDirectoryName(dbpath);
-                Directory.CreateDirectory(folderPath);
-                File.CreateText(dbpath).Dispose(); //Opens new StreamWriter to create the file then closes the writer - writing is handled by the SQLite functions
+            if (File.Exists(dbpath)) {
+                File.Delete(dbpath);
             }
 
+            //Open a new StreamWriter to create a file then immediately close - writing is handled by the SQLite functions
+            File.CreateText(dbpath).Dispose(); 
+            
+            //Initialize database tables and schema
             _db = new SQLiteConnection(dbpath);
-            if (isFirstInit) {
-                _db.CreateTable<TGIItem>();
-                //_db.CreateTable<PathItem>();
-                _db.CreateTable<PackItem>();
-            }
+            _db.CreateTable<TGIItem>();
+            _db.CreateTable<PackItem>();
+            _db.CreateTable<TGICategory>();
+            _db.Insert(new TGICategory { TGIType = 0, TGIName = "Building" });
+            _db.Insert(new TGICategory { TGIType = 1, TGIName = "Prop" });
+            _db.Insert(new TGICategory { TGIType = 2, TGIName = "Texture" });
+            _db.Insert(new TGICategory { TGIType = 4, TGIName = "Flora" });
+            _db.Insert(new TGICategory { TGIType = 10, TGIName = "Cohort" });
+            
         }
 
 
         /// <summary>
         /// Add a TGI item with associated information to the database.
         /// </summary>
-        /// <param name="path">File path the TGI is contained in</param>
+        /// <param name="packName">Name of dependency pack the TGI is contained in</param>
         /// <param name="tgi">String representation of the TGI in the format 0x00000000 0x00000000 0x00000000 </param>
+        /// <param name="tgitype">Type of TGI: Building=0, Prop=1, Texture=2, Flora=4, Cohort=10</param>
         /// <param name="exmpName">Name of the exemplar; null if the TGI is a texture</param>
         /// <remarks>The path in TGITable is stored as a reference to the full path in PathTable. This dramatically reduces file size as the long path string only needs to be stored once.</remarks>
-        public void AddTGI(string path, string tgi, string exmpName) {
+        public void AddTGI(string packName, string tgi, int? tgitype, string exmpName) {
             //check if we already have a matching pathid, create new pathitem if not, otherwise use found pathid
-            int packID = GetPathID(path);
+            int packID = GetPathID(packName);
             if (packID <= 0) {
-                //PathItem newPath = new PathItem {
-                //    PathName = path
-                //};
-                //_db.Insert(newPath);
-                //pathID = newPath.PathID;
 
                 PackItem newPack = new PackItem {
-                    Title = path
+                    PackName = packName
                 };
                 _db.Insert(newPack);
                 packID = newPack.PackID;
@@ -134,8 +135,9 @@ namespace SC4ModManager {
 
             //once we know our pathitem then add the new tgi with that pathitem
             TGIItem newTGI = new TGIItem {
-                PathID = packID,
+                PackID = packID,
                 TGI = tgi,
+                TGIType =tgitype,
                 ExemplarName = exmpName
             };
             _db.Insert(newTGI);
@@ -144,12 +146,12 @@ namespace SC4ModManager {
 
         //return -1 if item is not found or if multiple matches were found
         //PathItems table should always have unique items, so we might have an issue if the return is more than one item
-        private int GetPathID(string path) {
-            string searchPath = path.Replace(@"\\", @"\").Replace("'", "''");
-            List<PathItem> result = _db.Query<PathItem>($"SELECT * FROM PathTable WHERE PathName = '{searchPath}'");
+        private int GetPathID(string name) {
+            string searchName = name.Replace("'", "''");
+            List<PackItem> result = _db.Query<PackItem>($"SELECT * FROM PackTable WHERE PackName = '{searchName}'");
 
             if (result.Count == 1) {
-                return result[0].PathID;
+                return result[0].PackID;
             } else {
                 return -1;
             }

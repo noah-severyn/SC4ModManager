@@ -140,46 +140,76 @@ namespace SC4ModManager {
 		/// </summary>
 		/// <param name="dbpfFiles">List of file paths to iterate through</param>
 		public static void GeneratePropTextureCatalogDB(List<FileInfo> dbpfFiles) {
-			string exName;
+			StringBuilder log = new StringBuilder("FileName,Type,Group,Instance,TGIType,TGISubtype,Message");
+
+            string filename;
+            string exemplarname;
+			long? exemplartype;
             DBPFEntryEXMP exmp;
 			DBPFFile dbpf;
 			DBPFTGI family;
-			DBPFProperty prop;
             var db = new DatabaseBuilder("C:\\source\\repos\\SC4ModManager\\SC4ModManager\\SC4ModManager");
 
             foreach (FileInfo file in dbpfFiles) {
 				Debug.WriteLine(file.Name);
 				dbpf = new DBPFFile(file);
 				foreach (DBPFEntry entry in dbpf.GetEntries()) {
+					filename = Path.GetFileNameWithoutExtension(file.Name);
 
-					//Add all Base/Overlay textures. Look at the least significant 4 bits and only add if it is 0, 5, or A: And the Instance by 0b1111 (0xF) and check the modulus result.
-					if (entry.MatchesKnownEntryType(DBPFTGI.FSH_BASE_OVERLAY) && ((entry.TGI.InstanceID & 0xF) % 5) == 0) {
-						db.AddTGI(Path.GetFileNameWithoutExtension(file.Name), entry.TGI.ToString().Substring(0, 34), null);
+                    //Add Base/Overlay textures
+					//Look at the least significant 4 bits and only add if it is 0, 5, or A: AND the Instance by 0b1111 (0xF) and examine the modulus result.
+                    if (entry.MatchesKnownEntryType(DBPFTGI.FSH_BASE_OVERLAY) && ((entry.TGI.InstanceID & 0xF) % 5) == 0) {
+						db.AddTGI(filename, entry.TGI.ToString().Substring(0, 34), 2, null);
 					}
 
-					//Add all Exemplars
+					//Add Exemplars
 					else if (entry.MatchesKnownEntryType(DBPFTGI.EXEMPLAR)) {
 						exmp = (DBPFEntryEXMP) entry;
 						entry.DecodeEntry();
 						if (exmp.ListOfProperties.Count == 0) continue;
 
-						prop = exmp.GetProperty("ExemplarName");
-                        exName = (string) prop.GetData();
-                        db.AddTGI(Path.GetFileNameWithoutExtension(file.Name), exmp.TGI.ToString().Substring(0, 34), exName);
+						try {
+                            exemplartype = (long?) exmp.GetProperty("ExemplarType").GetData(0);
+                        }
+                        catch {
+							log.AppendLine($"{filename}, {exmp.TGI.ToString()},missing property: ExemplarType");
+							exemplartype = 0;
+						}
+                        exemplarname = (string) exmp.GetProperty("ExemplarName").GetData();
+
+                        switch (exemplartype) {
+							case null: //Unknown
+                                db.AddTGI(filename, exmp.TGI.ToString().Substring(0, 34), null, exemplarname);
+                                break;
+							case 0x02: //Building
+                                db.AddTGI(filename, exmp.TGI.ToString().Substring(0, 34), 0, exemplarname);
+                                break;
+                            case 0x1E: //Prop
+                                db.AddTGI(filename, exmp.TGI.ToString().Substring(0, 34), 1, exemplarname);
+                                break;
+							case 0x0F: //Flora
+                                db.AddTGI(filename, exmp.TGI.ToString().Substring(0, 34), 4, exemplarname);
+                                break;
+                            default:
+								break;
+						}
 					}
 
-					//Add all Cohorts. Note the Building/prop family of the Cohort is always 0x10000000 less than the Cohort's Index.
+					//Add Cohorts
+					//Note the Building/prop family of the Cohort is always 0x10000000 less than the Cohort's Index.
 					else if (entry.MatchesKnownEntryType(DBPFTGI.COHORT)) {
                         exmp = (DBPFEntryEXMP) entry;
                         family = new DBPFTGI((uint) entry.TGI.TypeID, (uint) entry.TGI.GroupID, (uint) (entry.TGI.InstanceID - 0x10000000));
 						entry.DecodeEntry();
 						if (exmp.ListOfProperties.Count == 0) continue;
 
-                        exName = (string) exmp.GetProperty("ExemplarName").GetData();
-                        db.AddTGI(Path.GetFileNameWithoutExtension(file.Name), entry.TGI.ToString().Substring(0, 34), exName);
+                        exemplarname = (string) exmp.GetProperty("ExemplarName").GetData();
+                        db.AddTGI(filename, family.ToString().Substring(0, 34), 10, exemplarname);
 					}
 				}
 			}
+
+			File.AppendAllText("C:\\source\\repos\\SC4ModManager\\SC4ModManager\\SC4ModManager\\log.csv", log.ToString());
 		}
 		#endregion PropTextureCatalog
 
