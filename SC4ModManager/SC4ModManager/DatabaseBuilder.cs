@@ -24,7 +24,7 @@ namespace SC4ModManager {
         [Column("TGIType")]
         public int? TGIType { get; set; }
 
-        [Column("ExmpName")]
+        [Column("ExemplarName")]
         public string ExemplarName { get; set; }
 
         public override string ToString() {
@@ -69,7 +69,7 @@ namespace SC4ModManager {
     /// </summary>
     [Table("TGITypes")]
     public class TGICategory {
-        [PrimaryKey, AutoIncrement]
+        [PrimaryKey]
         [Column("TGIType")]
         public int TGIType { get; set; }
 

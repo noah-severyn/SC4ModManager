@@ -209,7 +209,7 @@ namespace SC4ModManager {
 				}
 			}
 
-			File.AppendAllText("C:\\source\\repos\\SC4ModManager\\SC4ModManager\\SC4ModManager\\log.csv", log.ToString());
+			File.WriteAllText("C:\\source\\repos\\SC4ModManager\\SC4ModManager\\SC4ModManager\\log.csv", log.ToString());
 		}
 		#endregion PropTextureCatalog
 
