@@ -1,5 +1,4 @@
-FileName,Type,Group,Instance,TGIType,TGISubtype,Message
-BSC MEGA Props - CAL vol01 v2, 0x6534284A, 0x096E6817, 0xC137E000, EXMP, EXEMPLAR,missing property: ExemplarType
+FileName,Type,Group,Instance,TGIType,TGISubtype,MessageBSC MEGA Props - CAL vol01 v2, 0x6534284A, 0x096E6817, 0xC137E000, EXMP, EXEMPLAR,missing property: ExemplarType
 BSC MEGA Props - JENX Vol03, 0x6534284A, 0x096E6739, 0x10240000, EXMP, EXEMPLAR,missing property: ExemplarType
 BSC MEGA Props - JENX Vol03, 0x6534284A, 0x096E6739, 0x10240010, EXMP, EXEMPLAR,missing property: ExemplarType
 BSC MEGA Props - JENX Vol03, 0x6534284A, 0x096E6739, 0x10240020, EXMP, EXEMPLAR,missing property: ExemplarType
@@ -134,7 +133,6 @@ METMW Prop Pack Alpha, 0x6534284A, 0x07BDDF1C, 0x7FA3FD77, EXMP, EXEMPLAR,missin
 METMW Prop Pack Alpha, 0x6534284A, 0x07BDDF1C, 0xDFA3FD67, EXMP, EXEMPLAR,missing property: ExemplarType
 METMW Prop Pack Alpha, 0x6534284A, 0x07BDDF1C, 0x3FA3FDE4, EXMP, EXEMPLAR,missing property: ExemplarType
 METMW Prop Pack Alpha, 0x6534284A, 0x07BDDF1C, 0x9FA3FCBC, EXMP, EXEMPLAR,missing property: ExemplarType
-Murimk_Bicycle_Props, 0x6534284A, 0x07BDDF1C, 0x3A39C1B5, EXMP, EXEMPLAR,missing property: ExemplarType
 MUTCD US Highway Signs Pack, 0x6534284A, 0x07BDDF1C, 0xA88DD30D, EXMP, EXEMPLAR,missing property: ExemplarType
 MUTCD US Highway Signs Pack, 0x6534284A, 0x07BDDF1C, 0x08C9680B, EXMP, EXEMPLAR,missing property: ExemplarType
 MUTCD US Highway Signs Pack, 0x6534284A, 0x07BDDF1C, 0x88F1BD20, EXMP, EXEMPLAR,missing property: ExemplarType

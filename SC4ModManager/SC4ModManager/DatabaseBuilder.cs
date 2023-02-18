@@ -44,6 +44,9 @@ namespace SC4ModManager {
         [Column("PackName")]
         public string PackName { get; set; }
 
+        [Column("PackVersion")]
+        public string PackVersion { get; set; }
+
         [Column("Hyperlink")]
         public string Hyperlink { get; set; }
 
@@ -60,7 +63,7 @@ namespace SC4ModManager {
         public string SecondaryCat { get; set; }
 
         public override string ToString() {
-            return $"{PackID}: {PackName}, by {Author}. Type:{Type}, Primary:{PrimaryCat}, Secondary:{SecondaryCat}";
+            return $"{PackID}: {PackName}, (v{PackVersion}) by {Author}. Type:{Type}, Primary:{PrimaryCat}, Secondary:{SecondaryCat}";
         }
     }
 
