@@ -8,15 +8,24 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="catjam.gif" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CsvHelper" Version="30.0.1" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.3" />
     <PackageReference Include="RestSharp" Version="108.0.3" />
     <PackageReference Include="sqlite-net-pcl" Version="1.8.116" />
+    <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
+    <PackageReference Include="XamlAnimatedGif" Version="2.1.1" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="csDBPF">
       <HintPath>..\..\..\csDBPF\csDBPF\csDBPF\obj\Debug\net7.0\csDBPF.dll</HintPath>
+    </Reference>
+    <Reference Include="FSHLib">
+      <HintPath>..\..\..\..\..\Program Files (x86)\SC4 Utilities\FSH Converter Tool\FSHLib.dll</HintPath>
     </Reference>
   </ItemGroup>
 

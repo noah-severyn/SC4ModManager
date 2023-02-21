@@ -34,13 +34,14 @@ namespace SC4ModManager {
 
 		private readonly string B62Files = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\B62\\b62 unzipped";
 		private readonly string AllDeps = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps";
+		private readonly string tempdeps = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps\\tmp";
         private readonly string STEX_Sample = "C:\\Users\\Administrator\\OneDrive\\SC4 MODPACC\\STEX Entries Sample - 2021.10.22\\Files";
 		private readonly string FINAL = "C:\\Users\\Administrator\\OneDrive\\FINAL";
 
 
 		public MainWindow() {
 			InitializeComponent();
-			IEnumerable<string> files = Directory.EnumerateFiles(AllDeps, "*", SearchOption.TopDirectoryOnly);
+			IEnumerable<string> files = Directory.EnumerateFiles(tempdeps, "*", SearchOption.TopDirectoryOnly);
 			List<string> allFiles = new List<string>(files);
 			List<FileInfo> dbpfFiles;
 			List<FileInfo> skippedFiles;
@@ -51,7 +52,8 @@ namespace SC4ModManager {
 
 			//Analysis.GetTGIs(dbpfFiles); //creates "foundTGIs.csv"
 
-			Analysis.GeneratePropTextureCatalogDB(dbpfFiles); //creates SQLite DB
+			//Analysis.PropTextureCatalog.BuildDB(dbpfFiles); //creates SQLite DB
+			Analysis.PropTextureCatalog.fshTest();
 
 			//LEX_Access.AccessLEXFileInfo(2987);
 
