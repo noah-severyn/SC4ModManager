@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.Drawing;
 using FSHLib;
 using System.Drawing.Imaging;
+using System.Drawing.Drawing2D;
 
 namespace SC4ModManager {
 	public static class Analysis {
@@ -231,27 +232,47 @@ namespace SC4ModManager {
             public static void fshTest() {
                 //https://github.com/dmo2118/fsh2png/blob/master/fsh2png.c
                 string directory = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps\\tmp\\";
+                IEnumerable<string> filePaths = Directory.EnumerateFiles(directory, "*", SearchOption.TopDirectoryOnly);
+
+                FileStream fs;
+                string filename;
+                foreach (string path in filePaths) {
+                    if (Path.GetExtension(path) != ".fsh") continue;
+
+                    filename = Path.GetFileNameWithoutExtension(path);
+                    fs = new FileStream(path, FileMode.Open);
+
+                    //FSHLib.dll. code yoinked from https://www.sc4devotion.com/forums/index.php?topic=7127.msg303057#msg303057
+                    FSHImage fsh = new FSHImage(fs); //FOR FSH FILES ONLY
+                    fs.Close();
+                    BitmapItem bi = (BitmapItem) fsh.Bitmaps[0];
+                    //Bitmap bmp = Blend(bi.Alpha, bi.Bitmap);
+                    //bmp.MakeTransparent();
+                    BlendBitmap bl = new BlendBitmap();
+                    Bitmap bmp = bl.BlendBmp(bi);
 
 
-                string fname = "7AB50E44-0986135E-F85C40C9";
-                FileInfo file = new FileInfo(Path.Combine("C:\\Users\\Administrator\\OneDrive\\SC4 Deps\\tmp\\", fname + ".fsh"));
-                FileStream fs = new FileStream(file.FullName, FileMode.Open);
+                    //bmp.MakeTransparent(); //FOR OVERLAY TEXTURES ONLY - OR TEXTURES WITH AN ALPHA COMPONENT
+                    bmp.Save(Path.Combine(directory, filename+".png"), ImageFormat.Png);
+                }
 
-                FileStream fout = new FileStream(Path.Combine("C:\\Users\\Administrator\\OneDrive\\SC4 Deps\\tmp\\", fname + ".png"), FileMode.Create);
-
-
-                //FSHLib.dll. code yoinked from https://www.sc4devotion.com/forums/index.php?topic=7127.msg303057#msg303057
-                var fsh = new FSHImage(fs);
-                var bi = (BitmapItem) fsh.Bitmaps[0];
-                var bmp = bi.Bitmap;
-                bmp.MakeTransparent();
-                bmp.Save(fout, ImageFormat.Png);
-                
-
-                fs.Close();
-                fout.Close();
+            }
 
 
+            //for each pixel in the alpha that is black, set that to transparent in the new bitmap
+            private static Bitmap Blend(Bitmap alpha, Bitmap color) {
+                //both bitmap must be same size
+                if (alpha.Width != color.Width || alpha.Height != color.Height) {
+                    throw new ArgumentException("Provided bitmaps are different sizes.");
+                }
+                for (int x = 0; x < color.Width; x++) {
+                    for (int y = 0; y < color.Height; y++) {
+                        if (alpha.GetPixel(x,y) == Color.Black) {
+                            color.SetPixel(x, y, Color.Transparent);
+                        }
+                    }
+                }
+                return color;
             }
         }
 
