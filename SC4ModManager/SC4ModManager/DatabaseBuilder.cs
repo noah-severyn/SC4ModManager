@@ -6,6 +6,9 @@ using SQLite;
 using System.IO;
 
 namespace SC4ModManager {
+
+
+
     /// <summary>
     /// An item in the TGITable, which tracks which TGIs are in which dependency pack. 
     /// </summary>s
@@ -26,6 +29,9 @@ namespace SC4ModManager {
 
         [Column("ExemplarName")]
         public string ExemplarName { get; set; }
+
+        [Column("Thumbnail")]
+        public byte[] Thumbnail { get; set; }
 
         public override string ToString() {
             return $"{ID}: {PackID}, {TGI}, {TGIType}, {ExemplarName}";
@@ -100,8 +106,8 @@ namespace SC4ModManager {
             }
 
             //Open a new StreamWriter to create a file then immediately close - writing is handled by the SQLite functions
-            File.CreateText(dbpath).Dispose(); 
-            
+            File.CreateText(dbpath).Dispose();
+
             //Initialize database tables and schema
             _db = new SQLiteConnection(dbpath);
             _db.CreateTable<TGIItem>();
@@ -112,7 +118,6 @@ namespace SC4ModManager {
             _db.Insert(new TGICategory { TGIType = 2, TGIName = "Texture" });
             _db.Insert(new TGICategory { TGIType = 4, TGIName = "Flora" });
             _db.Insert(new TGICategory { TGIType = 10, TGIName = "Cohort" });
-            
         }
 
 
@@ -120,7 +125,7 @@ namespace SC4ModManager {
         /// Add a TGI item with associated information to the database.
         /// </summary>
         /// <param name="packName">Name of dependency pack the TGI is contained in</param>
-        /// <param name="tgi">String representation of the TGI in the format 0x00000000 0x00000000 0x00000000 </param>
+        /// <param name="tgi">String representation of the TGI in the format 0x00000000, 0x00000000, 0x00000000 </param>
         /// <param name="tgitype">Type of TGI: Building=0, Prop=1, Texture=2, Flora=4, Cohort=10</param>
         /// <param name="exmpName">Name of the exemplar; null if the TGI is a texture</param>
         /// <remarks>The path in TGITable is stored as a reference to the full path in PathTable. This dramatically reduces file size as the long path string only needs to be stored once.</remarks>
@@ -140,8 +145,9 @@ namespace SC4ModManager {
             TGIItem newTGI = new TGIItem {
                 PackID = packID,
                 TGI = tgi,
-                TGIType =tgitype,
-                ExemplarName = exmpName
+                TGIType = tgitype,
+                ExemplarName = exmpName,
+                Thumbnail = GetThumbnail(tgi)
             };
             _db.Insert(newTGI);
         }
@@ -163,6 +169,16 @@ namespace SC4ModManager {
         private bool DoesTGIExist(string tgi) {
             List<TGIItem> result = _db.Query<TGIItem>($"SELECT * FROM TGITable WHERE TGI = '{tgi}'");
             return result.Count == 0;
+        }
+
+        private byte[] GetThumbnail(string tgi) {
+            string fname = tgi.Replace("0x", "").Replace(", ", "-") + ".png";
+            try {
+                return File.ReadAllBytes("C:\\source\\repos\\SC4PropTextureCatalog\\wwwroot\\img\\thumbnails\\" + fname);
+            } catch {
+                return new byte[0];
+            }
+            
         }
     }
 }

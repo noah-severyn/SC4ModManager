@@ -41,7 +41,7 @@ namespace SC4ModManager {
 
 		public MainWindow() {
 			InitializeComponent();
-			IEnumerable<string> files = Directory.EnumerateFiles(tempdeps, "*", SearchOption.TopDirectoryOnly);
+			IEnumerable<string> files = Directory.EnumerateFiles(AllDeps, "*", SearchOption.TopDirectoryOnly);
 			List<string> allFiles = new List<string>(files);
 			List<FileInfo> dbpfFiles;
 			List<FileInfo> skippedFiles;
@@ -52,8 +52,8 @@ namespace SC4ModManager {
 
 			//Analysis.GetTGIs(dbpfFiles); //creates "foundTGIs.csv"
 
-			//Analysis.PropTextureCatalog.BuildDB(dbpfFiles); //creates SQLite DB
-			Analysis.PropTextureCatalog.fshTest();
+			Analysis.PropTextureCatalog.BuildDB(dbpfFiles); //creates SQLite DB
+			//Analysis.PropTextureCatalog.fshTest();
 
 			//LEX_Access.AccessLEXFileInfo(2987);
 

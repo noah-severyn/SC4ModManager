@@ -154,17 +154,17 @@ namespace SC4ModManager {
 
                 string filename;
                 string exemplarname;
-                long? exemplartype;
+                int exemplartype;
                 DBPFFile dbpf;
                 DBPFEntryEXMP exmp;
                 DBPFProperty prop;
                 DBPFTGI family;
-                var db = new DatabaseBuilder("C:\\source\\repos\\SC4ModManager\\SC4ModManager\\SC4ModManager");
+                DatabaseBuilder db = new DatabaseBuilder("C:\\source\\repos\\SC4ModManager\\SC4ModManager\\SC4ModManager");
 
                 foreach (FileInfo file in dbpfFiles) {
                     Debug.WriteLine(file.Name);
                     dbpf = new DBPFFile(file);
-                    log.AppendLine(dbpf.GetIssueLog());
+                    //log.AppendLine(dbpf.GetIssueLog());
                     foreach (DBPFEntry entry in dbpf.GetEntries()) {
                         filename = Path.GetFileNameWithoutExtension(file.Name);
 
@@ -198,13 +198,13 @@ namespace SC4ModManager {
                                 case -1: //Unknown
                                     db.AddTGI(filename, exmp.TGI.ToString().Substring(0, 34), null, exemplarname);
                                     break;
-                                case (long?) DBPFProperty.ExemplarTypes.Building: //0x02 Building
+                                case 0x02: //Building
                                     db.AddTGI(filename, exmp.TGI.ToString().Substring(0, 34), 0, exemplarname);
                                     break;
-                                case (long?) DBPFProperty.ExemplarTypes.Prop: //0x1E Prop
+                                case 0x1E: //Prop
                                     db.AddTGI(filename, exmp.TGI.ToString().Substring(0, 34), 1, exemplarname);
                                     break;
-                                case (long?) DBPFProperty.ExemplarTypes.FloraFauna: //0x0F Flora
+                                case 0x0F: //Flora
                                     db.AddTGI(filename, exmp.TGI.ToString().Substring(0, 34), 4, exemplarname);
                                     break;
                                 default:
@@ -226,7 +226,7 @@ namespace SC4ModManager {
                     }
                 }
 
-                File.WriteAllText("C:\\source\\repos\\SC4ModManager\\SC4ModManager\\SC4ModManager\\log.csv", log.ToString());
+                //File.WriteAllText("C:\\source\\repos\\SC4ModManager\\SC4ModManager\\SC4ModManager\\log.csv", log.ToString());
             }
 
             public static void fshTest() {
