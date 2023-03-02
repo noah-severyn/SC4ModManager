@@ -6,9 +6,6 @@ using SQLite;
 using System.IO;
 
 namespace SC4ModManager {
-
-
-
     /// <summary>
     /// An item in the TGITable, which tracks which TGIs are in which dependency pack. 
     /// </summary>s
@@ -92,7 +89,6 @@ namespace SC4ModManager {
 
 
 
-
     /// <summary>
     /// Create and operate on the Prop Texture Catalog database.
     /// </summary>
@@ -130,7 +126,7 @@ namespace SC4ModManager {
         /// <param name="exmpName">Name of the exemplar; null if the TGI is a texture</param>
         /// <remarks>The path in TGITable is stored as a reference to the full path in PathTable. This dramatically reduces file size as the long path string only needs to be stored once.</remarks>
         public void AddTGI(string packName, string tgi, int? tgitype, string exmpName) {
-            //check if we already have a matching pathid, create new pathitem if not, otherwise use found pathid
+            //check if we already have a matching PackID, create new PackItem if not, otherwise use found PackID
             int packID = GetPathID(packName);
             if (packID <= 0) {
 
@@ -141,20 +137,24 @@ namespace SC4ModManager {
                 packID = newPack.PackID;
             }
 
-            //once we know our pathitem then add the new tgi with that pathitem
+            //once we know our PackID then add the new TGI with that PackID
             TGIItem newTGI = new TGIItem {
                 PackID = packID,
                 TGI = tgi,
                 TGIType = tgitype,
-                ExemplarName = exmpName,
-                Thumbnail = GetThumbnail(tgi)
+                ExemplarName = exmpName
+                //Thumbnail = GetThumbnail(tgi)
             };
             _db.Insert(newTGI);
         }
 
 
-        //return -1 if item is not found or if multiple matches were found
-        //PathItems table should always have unique items, so we might have an issue if the return is more than one item
+        /// <summary>
+        /// Lookup and return the PathID for the provided PathName.
+        /// </summary>
+        /// <param name="name">Path name (file name) to lookup</param>
+        /// <returns>PathID if name is found; -1 if item is not found or if multiple matches were found</returns>
+        /// <remarks>PathItems table should always have unique items, so we might have an issue if the return is more than one item.</remarks>
         private int GetPathID(string name) {
             string searchName = name.Replace("'", "''");
             List<PackItem> result = _db.Query<PackItem>($"SELECT * FROM PackTable WHERE PackName = '{searchName}'");
@@ -166,11 +166,17 @@ namespace SC4ModManager {
             }
         }
 
+
         private bool DoesTGIExist(string tgi) {
             List<TGIItem> result = _db.Query<TGIItem>($"SELECT * FROM TGITable WHERE TGI = '{tgi}'");
             return result.Count == 0;
         }
 
+        /// <summary>
+        /// Fetches the PNG thumbnail image for this TGI.
+        /// </summary>
+        /// <param name="tgi">TGI to use</param>
+        /// <returns>A PNG image represented as bytes</returns>
         private byte[] GetThumbnail(string tgi) {
             string fname = tgi.Replace("0x", "").Replace(", ", "-") + ".png";
             try {
