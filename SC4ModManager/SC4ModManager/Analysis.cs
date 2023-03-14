@@ -12,8 +12,7 @@ using System.Linq;
 using System.Diagnostics;
 using System.Drawing;
 using FSHLib;
-using System.Drawing.Imaging;
-using System.Drawing.Drawing2D;
+using SixLabors.ImageSharp;
 
 namespace SC4ModManager {
 	public static class Analysis {
@@ -164,7 +163,7 @@ namespace SC4ModManager {
                 foreach (FileInfo file in dbpfFiles) {
                     Debug.WriteLine(file.Name);
                     dbpf = new DBPFFile(file);
-                    //log.AppendLine(dbpf.GetIssueLog());
+                    log.AppendLine(dbpf.GetIssueLog());
                     foreach (DBPFEntry entry in dbpf.GetEntries()) {
                         filename = Path.GetFileNameWithoutExtension(file.Name);
 
@@ -226,54 +225,56 @@ namespace SC4ModManager {
                     }
                 }
 
-                //File.WriteAllText("C:\\source\\repos\\SC4ModManager\\SC4ModManager\\SC4ModManager\\log.csv", log.ToString());
+                File.WriteAllText("C:\\source\\repos\\SC4ModManager\\SC4ModManager\\SC4ModManager\\log.csv", log.ToString());
             }
 
-            public static void fshTest() {
-                //https://github.com/dmo2118/fsh2png/blob/master/fsh2png.c
-                string directory = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps\\tmp\\";
-                IEnumerable<string> filePaths = Directory.EnumerateFiles(directory, "*", SearchOption.TopDirectoryOnly);
+            //public static void fshTest() {
+            //    //https://github.com/dmo2118/fsh2png/blob/master/fsh2png.c
+            //    string directory = "C:\\Users\\Administrator\\OneDrive\\SC4 Deps\\tmp\\";
+            //    IEnumerable<string> filePaths = Directory.EnumerateFiles(directory, "*", SearchOption.TopDirectoryOnly);
 
-                FileStream fs;
-                string filename;
-                foreach (string path in filePaths) {
-                    if (Path.GetExtension(path) != ".fsh") continue;
+            //    FileStream fs;
+            //    string filename;
+            //    foreach (string path in filePaths) {
+            //        if (Path.GetExtension(path) != ".fsh") continue;
 
-                    filename = Path.GetFileNameWithoutExtension(path);
-                    fs = new FileStream(path, FileMode.Open);
+            //        filename = Path.GetFileNameWithoutExtension(path);
+            //        fs = new FileStream(path, FileMode.Open);
 
-                    //FSHLib.dll. code yoinked from https://www.sc4devotion.com/forums/index.php?topic=7127.msg303057#msg303057
-                    FSHImage fsh = new FSHImage(fs); //FOR FSH FILES ONLY
-                    fs.Close();
-                    BitmapItem bi = (BitmapItem) fsh.Bitmaps[0];
-                    //Bitmap bmp = Blend(bi.Alpha, bi.Bitmap);
-                    //bmp.MakeTransparent();
-                    BlendBitmap bl = new BlendBitmap();
-                    Bitmap bmp = bl.BlendBmp(bi);
-
-
-                    //bmp.MakeTransparent(); //FOR OVERLAY TEXTURES ONLY - OR TEXTURES WITH AN ALPHA COMPONENT
-                    bmp.Save(Path.Combine(directory, filename+".png"), ImageFormat.Png);
-                }
-
-            }
+            //        //FSHLib.dll. code yoinked from https://www.sc4devotion.com/forums/index.php?topic=7127.msg303057#msg303057
+            //        FSHImage fsh = new FSHImage(fs); //FOR FSH FILES ONLY
+            //        fs.Close();
+            //        BitmapItem bi = (BitmapItem) fsh.Bitmaps[0];
+            //        //Bitmap bmp = Blend(bi.Alpha, bi.Bitmap);
+            //        //bmp.MakeTransparent();
+            //        BlendBitmap bl = new BlendBitmap();
+            //        Bitmap bmp = bl.BlendBmp(bi);
 
 
-            //for each pixel in the alpha that is black, set that to transparent in the new bitmap
-            private static Bitmap Blend(Bitmap alpha, Bitmap color) {
-                //both bitmap must be same size
-                if (alpha.Width != color.Width || alpha.Height != color.Height) {
-                    throw new ArgumentException("Provided bitmaps are different sizes.");
-                }
-                for (int x = 0; x < color.Width; x++) {
-                    for (int y = 0; y < color.Height; y++) {
-                        if (alpha.GetPixel(x,y) == Color.Black) {
-                            color.SetPixel(x, y, Color.Transparent);
-                        }
-                    }
-                }
-                return color;
-            }
+            //        //bmp.MakeTransparent(); //FOR OVERLAY TEXTURES ONLY - OR TEXTURES WITH AN ALPHA COMPONENT
+            //        bmp.Save(Path.Combine(directory, filename+".png"), ImageFormat.Png);
+            //    }
+
+            //}
+
+
+            ////for each pixel in the alpha that is black, set that to transparent in the new bitmap
+            
+            //private static Image Blend(Image alpha, Image color) {
+            //    //both bitmap must be same size
+            //    if (alpha.Width != color.Width || alpha.Height != color.Height) {
+            //        throw new ArgumentException("Provided bitmaps are different sizes.");
+            //    }
+            //    for (int x = 0; x < color.Width; x++) {
+            //        for (int y = 0; y < color.Height; y++) {
+            //            if (alpha.GetPixel(x,y) == Color.Black) {
+            //                color.
+            //                color.SetPixel(x, y, Color.Transparent);
+            //            }
+            //        }
+            //    }
+            //    return color;
+            //}
         }
 
 
