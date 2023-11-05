@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34221.43
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SC4ModManager", "SC4ModManager.csproj", "{97B5B03E-76A5-40FB-857A-E9529EBECA49}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{97B5B03E-76A5-40FB-857A-E9529EBECA49}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97B5B03E-76A5-40FB-857A-E9529EBECA49}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97B5B03E-76A5-40FB-857A-E9529EBECA49}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97B5B03E-76A5-40FB-857A-E9529EBECA49}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EF22CDD6-E093-4BFB-AA41-9EE78963F515}
+	EndGlobalSection
+EndGlobal
